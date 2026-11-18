@@ -3982,11 +3982,12 @@ function newTrip(name){const d=todayStr();return {id:uid(),name:name||'Nový vý
 let map,L_other,L_route,L_wp,L_poi,L_acc,L_search,L_sug,BASES,layerCtl,gLayer=null;
 function initMap(){
  map=L.map('map',{zoomControl:true}).setView([48.85,18.6],8);
- const osm=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',{maxZoom:20,subdomains:'abcd',crossOrigin:'anonymous',attribution:'© OpenStreetMap, © CARTO'});
- const street=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,crossOrigin:'anonymous',attribution:'© Esri'});
+ const osm=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,crossOrigin:'anonymous',attribution:'© Esri, HERE, Garmin, © OpenStreetMap'});
+ const osmStd=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+ const street=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,crossOrigin:'anonymous',attribution:'© Esri'});
  const topo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenTopoMap, © OpenStreetMap'});
  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,crossOrigin:'anonymous',attribution:'© Esri'});
- osm.addTo(map);BASES={'Cestná mapa':osm,'Cestná mapa (Esri)':street,'Turistická / reliéf':topo,'Satelit':sat};layerCtl=L.control.layers(BASES).addTo(map);map.on('baselayerchange',()=>{if(S.view==='day')drawMap()});
+ osm.addTo(map);BASES={'Cestná mapa':osm,'Topografická (Esri)':street,'Turistická / reliéf':topo,'Satelit':sat};if(location.protocol.startsWith('http'))BASES['OpenStreetMap']=osmStd;layerCtl=L.control.layers(BASES).addTo(map);map.on('baselayerchange',()=>{if(S.view==='day')drawMap()});
  L.control.scale({imperial:false}).addTo(map);
  L_other=L.layerGroup().addTo(map);L_route=L.layerGroup().addTo(map);L_wp=L.layerGroup().addTo(map);L_poi=L.layerGroup().addTo(map);L_acc=L.layerGroup().addTo(map);L_search=L.layerGroup().addTo(map);L_sug=L.layerGroup().addTo(map);
  map.on('click',onMapClick);
@@ -4087,18 +4088,26 @@ const curveColor=v=>v<45?'#3ea6ff':v<90?'#3ecf8e':v<160?'#f5c542':v<260?'#ff7a1a
 
 /* ---------- Trasovanie ---------- */
 const toC=rt=>rt.geometry.coordinates.map(c=>[+c[1].toFixed(5),+c[0].toFixed(5)]);
-async function osrm(pts,alts){const t=trip();const coords=pts.map(p=>(+p[1]).toFixed(5)+','+(+p[0]).toFixed(5)).join(';');
- const base=`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false${alts?'&alternatives=3':''}`;
- const go=async u=>{const r=await fetch(u);const j=await r.json();if(j.code!=='Ok'||!j.routes||!j.routes.length)throw new Error(j.message||j.code);return j.routes};
- if(t.avoidHighways){try{return {routes:await go(base+'&exclude=motorway'),noHw:true}}catch(e){}}
- return {routes:await go(base),noHw:false}}
+function decPoly6(str){const c=[];let i=0,la=0,lg=0;const d=()=>{let r=0,sh=0,b;do{b=str.charCodeAt(i++)-63;r|=(b&0x1f)<<sh;sh+=5}while(b>=0x20);return r&1?~(r>>1):r>>1};while(i<str.length){la+=d();lg+=d();c.push([lg/1e6,la/1e6])}return c}
+let VAL_DOWN=0;
+async function valhalla(pts,alts){const t=trip();const o={locations:pts.map((p,i)=>{const L={lat:+p[0],lon:+p[1],type:i===0||i===pts.length-1?'break':'through'};if(p[2])L.search_filter={min_road_class:p[2]===2?'secondary':'tertiary',exclude_ramp:true};return L}),costing:'motorcycle',units:'kilometers',directions_type:'none',
+  costing_options:{motorcycle:{use_highways:t.avoidHighways?0:1,use_tolls:t.avoidHighways?0.3:0.6}}};if(alts&&pts.length===2)o.alternates=2;
+ const ctl=new AbortController();const tm=setTimeout(()=>ctl.abort(),25000);
+ try{const r=await fetch('https://valhalla1.openstreetmap.de/route?json='+encodeURIComponent(JSON.stringify(o)),{signal:ctl.signal});const j=await r.json();if(!j.trip)throw new Error(j.error||'Valhalla '+r.status);
+  const conv=tr=>{let coords=[];tr.legs.forEach((l,k)=>{const c=decPoly6(l.shape);coords=coords.concat(k?c.slice(1):c)});return {geometry:{coordinates:coords},distance:tr.summary.length*1000,duration:tr.summary.time}};
+  return {routes:[conv(j.trip),...(j.alternates||[]).map(a=>conv(a.trip))],noHw:!!t.avoidHighways}}finally{clearTimeout(tm)}}
+async function osrm(pts,alts){
+ if(Date.now()>VAL_DOWN){try{return await valhalla(pts,alts)}catch(e){VAL_DOWN=Date.now()+120000}}
+ const coords=pts.map(p=>(+p[1]).toFixed(5)+','+(+p[0]).toFixed(5)).join(';');
+ const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false${alts?'&alternatives=3':''}`);const j=await r.json();
+ if(j.code!=='Ok'||!j.routes||!j.routes.length)throw new Error(j.message||j.code);return {routes:j.routes,noHw:false}}
 function hasSpur(c,v){let k=0,best=1e9;c.forEach((p,i)=>{const d=hav(p,v);if(d<best){best=d;k=i}});let i1=k,acc=0;while(i1>0&&acc<0.5){acc+=hav(c[i1-1],c[i1]);i1--}let i2=k;acc=0;while(i2<c.length-1&&acc<0.5){acc+=hav(c[i2],c[i2+1]);i2++}return (k-i1>0&&i2-k>0)&&hav(c[i1],c[i2])<0.06}
 async function curvySegment(a,b,maxDet){
  const cands=[];let noHw=false;
  const direct=await osrm([a,b],true);noHw=direct.noHw;direct.routes.forEach(r=>cands.push({c:toC(r),dist:r.distance,dur:r.duration}));
  const km=hav(a,b);
  if(km>8){const r=Math.PI/180,mid=[(a[0]+b[0])/2,(a[1]+b[1])/2],dy=b[0]-a[0],dx=(b[1]-a[1])*Math.cos(mid[0]*r);
-  for(const off of [0.15,-0.15,0.3,-0.3]){const v=[mid[0]+off*dx,mid[1]+off*(-dy)/Math.cos(mid[0]*r)];
+  for(const off of [0.15,-0.15,0.3,-0.3]){const v=[mid[0]+off*dx,mid[1]+off*(-dy)/Math.cos(mid[0]*r),1];
    try{const rr=await osrm([a,v,b],false);const c=toC(rr.routes[0]);if(!hasSpur(c,v))cands.push({c,dist:rr.routes[0].distance,dur:rr.routes[0].duration})}catch(e){}}}
  const shortest=Math.min(...cands.map(x=>x.dist));let best=null,bs=-1;
  cands.filter(x=>x.dist<=shortest*maxDet&&overlapKm(x.c)<=0.4).forEach(x=>{const s=curveInfo(x.c).degKm;if(s>bs){bs=s;best=x}});
@@ -4107,7 +4116,7 @@ const segStyle=(d,i,ov)=>ov||(d.waypoints[i].prof&&d.waypoints[i].prof!=='trip'?
 async function routeDay(d,silent,ov){
  const t=trip();d.elev=null;d.weather=null;
  if(d.waypoints.length<2){d.route=null;save();renderAll();return}
- const pts=d.waypoints.map(w=>[w.lat,w.lng]);const n=pts.length-1;
+ const pts=d.waypoints.map(w=>[w.lat,w.lng,w.major===2?2:w.major?1:0]);const n=pts.length-1;
  const styles=d.waypoints.slice(0,-1).map((w,i)=>segStyle(d,i,ov));
  try{
   if(styles.every(x=>x==='fast')){
@@ -4127,8 +4136,8 @@ async function routeDay(d,silent,ov){
 }
 /* ---------- Okružná trasa ---------- */
 function dest(p,brg,km){const r=Math.PI/180,f1=p[0]*r,l1=p[1]*r,th=brg*r,dl=km/6371;const f2=Math.asin(Math.sin(f1)*Math.cos(dl)+Math.cos(f1)*Math.sin(dl)*Math.cos(th));const l2=l1+Math.atan2(Math.sin(th)*Math.sin(dl)*Math.cos(f1),Math.cos(dl)-Math.sin(f1)*Math.sin(f2));return [f2/r,l2/r]}
-function overlapKm(c){if(c.length<2)return 0;const p=resample(c,0.08);const seen=new Map();let ov=0;const key=q=>Math.round(q[0]*1400)+'_'+Math.round(q[1]*950);
- p.forEach((q,i)=>{const k=key(q);const prev=seen.get(k);if(prev!=null&&i-prev>8&&p.length-i>8)ov+=0.08;if(prev==null)seen.set(k,i)});return ov}
+function overlapKm(c,skipKm){if(c.length<2)return 0;skipKm=skipKm||0;const p=resample(c,0.08);const tot=p.length*0.08;const seen=new Map();let ov=0;const key=q=>Math.round(q[0]*1400)+'_'+Math.round(q[1]*950);
+ p.forEach((q,i)=>{const k=key(q);const prev=seen.get(k);const pos=i*0.08;if(prev!=null&&i-prev>8&&p.length-i>8&&pos>skipKm&&pos<tot-skipKm)ov+=0.08;if(prev==null)seen.set(k,i)});return ov}
 async function snapMajor(pts){try{const j=await overpass(`[out:json][timeout:30];(${pts.map(p=>`way[highway~"^(primary|secondary|tertiary)$"](around:5000,${p[0].toFixed(4)},${p[1].toFixed(4)});`).join('')});out geom;`);
  const nodes=[];(j.elements||[]).forEach(w=>{const g=w.geometry||[];for(let i=2;i<g.length-2;i++)nodes.push([g[i].lat,g[i].lon])});if(!nodes.length)return pts.map(p=>[+p[0].toFixed(5),+p[1].toFixed(5)]);
  return pts.map(p=>{let best=p,bd=1e9;nodes.forEach(n=>{const d=hav(p,n);if(d<bd){bd=d;best=n}});const q=bd<6?best:p;return [+q[0].toFixed(5),+q[1].toFixed(5)]})}catch(e){return pts.map(p=>[+p[0].toFixed(5),+p[1].toFixed(5)])}}
@@ -4137,23 +4146,25 @@ async function roundTrip(){
  if(d.route&&d.route.source==='gpx'&&!confirm('Nahradiť importovanú GPX trasu okruhom?'))return;
  if(d.waypoints.length>2&&!confirm('Okruh nahradí súčasné body trasy (štart ostane). Pokračovať?'))return;
  let s,name0;if(d.waypoints[0]){s=[d.waypoints[0].lat,d.waypoints[0].lng];name0=d.waypoints[0].name}else{const c=map.getCenter();s=[+c.lat.toFixed(5),+c.lng.toFixed(5)];name0=await reverseName(s[0],s[1])||'Štart'}
- const ang=dirSel==='rand'?Math.random()*360:+dirSel;const style=t.routeStyle||'fast';
- const target=style==='curvy'?km/(1+((t.maxDetour||1.4)-1)*0.45):km;let R=target/(2*Math.PI)/1.2;
- const mk=v=>[{lat:s[0],lng:s[1],name:name0},...v.map((x,i)=>({lat:x[0],lng:x[1],name:'Okruh '+(i+1)})),{lat:s[0],lng:s[1],name:name0}];
- let best=null;
- for(let at=0;at<6;at++){toast(`🔄 Skladám okruh – variant ${at+1}/6…`,5000);
-  const center=dest(s,ang+(Math.random()-0.5)*20,R),back=(ang+180)%360;let vias=[];
-  for(let k=1;k<=3;k++)vias.push(dest(center,back+k*90+(Math.random()-0.5)*16,R*(0.9+Math.random()*0.2)));
-  vias=await snapMajor(vias);d.waypoints=mk(vias);await routeDay(d,true,'fast');
-  if(!d.route||d.route.straight)break;
-  const got=d.route.distance/1000,ov=overlapKm(d.route.coords),spur=d.waypoints.slice(1,-1).some(w=>hasSpur(d.route.coords,[w.lat,w.lng]));
-  const score=Math.abs(got-target)/target+ov*0.25+(spur?1:0);
-  if(!best||score<best.score)best={score,wps:JSON.parse(JSON.stringify(d.waypoints)),route:d.route,got,ov};
-  if(Math.abs(got-target)/target<0.15&&ov<0.4&&!spur)break;R*=Math.min(1.6,Math.max(0.6,target/got))}
- if(best){d.waypoints=best.wps;d.route=best.route;
-  if(style!=='fast'){toast('🌀 Hľadám kľukaté varianty okruhu…',5000);const keep=d.route;await routeDay(d,true);if(!d.route||d.route.straight||overlapKm(d.route.coords)>Math.max(0.5,overlapKm(keep.coords)))d.route=keep}
-  for(const w of d.waypoints.slice(1,-1)){const n=await reverseName(w.lat,w.lng);if(n)w.name=n}}
- save();renderAll(true);toast(d.route&&!d.route.straight?`🔄 Okruh ${fmtKm(d.route.distance/1000)} hotový – ďalší variant vygeneruješ tým istým tlačidlom`:'Okruh sa nepodarilo vypočítať (bez internetu?)',4500)}
+ const style=t.routeStyle||'fast';const target=style==='curvy'?km/1.1:km;let ratio=1.25;
+ const mkW=v=>[{lat:s[0],lng:s[1],name:name0},...v.map((x,i)=>({lat:x[0],lng:x[1],name:'Okruh '+(i+1),major:2})),{lat:s[0],lng:s[1],name:name0}];
+ const cand=()=>{const ang=dirSel==='rand'?Math.random()*360:+dirSel+(Math.random()-0.5)*50;const n=Math.random()<0.5?3:4;const R=target/(2*Math.PI)/ratio;const center=dest(s,ang,R),back=(ang+180)%360;const v=[];
+  for(let k=1;k<=n;k++)v.push(dest(center,back+k*360/(n+1)+(Math.random()-0.5)*14,R*(0.9+Math.random()*0.2)));return v.map(x=>[+x[0].toFixed(5),+x[1].toFixed(5)])};
+ const evalC=async v=>{const w=mkW(v);try{const o=await osrm(w.map(x=>[x.lat,x.lng,x.major===2?2:x.major?1:0]),false);const r=o.routes[0];const c=toC(r);const got=r.distance/1000;
+  const ov=overlapKm(c,3),spur=w.slice(1,-1).some(x=>hasSpur(c,[x.lat,x.lng]));return {w,route:{coords:c,distance:r.distance,duration:r.duration,source:'osrm',style:'fast',noHighways:o.noHw},got,ov,spur,score:Math.abs(got-target)/target+ov*0.4+(ov>2.5?3:0)+(spur?2:0)}}catch(e){return null}};
+ let best=null,tries=0;
+ for(let round=0;round<5;round++){toast(`🔄 Skladám okruh – skúšam varianty ${round*3+1}–${round*3+3} z 15…`,6000);
+  const res=(await Promise.all([cand(),cand(),cand()].map(evalC))).filter(Boolean);tries+=res.length;
+  res.forEach(r=>{if(!best||r.score<best.score)best=r});
+  if(res.length){const avg=res.reduce((a,r)=>a+r.got,0)/res.length;ratio=Math.min(3,Math.max(0.6,ratio*avg/target))}
+  if(best&&Math.abs(best.got-target)/target<0.2&&best.ov<1.5&&!best.spur)break}
+ if(!best){d.route=null;save();renderAll(true);toast('Okruh sa nepodarilo vypočítať (bez internetu?)',4500);return}
+ d.waypoints=best.w;d.route=best.route;d.elev=null;d.weather=null;
+ {const rc=d.route.coords;d.waypoints.slice(1,-1).forEach(w=>{let bp=null,bd=1e9;for(let k=0;k<rc.length;k+=2){const dd=hav(rc[k],[w.lat,w.lng]);if(dd<bd){bd=dd;bp=rc[k]}}if(bp&&bd<8){w.lat=+bp[0].toFixed(5);w.lng=+bp[1].toFixed(5)}})}
+ if(style!=='fast'){toast('🌀 Hľadám kľukaté varianty okruhu…',6000);const keep=d.route;await routeDay(d,true);if(!d.route||d.route.straight||overlapKm(d.route.coords,3)>overlapKm(keep.coords,3)+1)d.route=keep}
+ for(const w of d.waypoints.slice(1,-1)){const n=await reverseName(w.lat,w.lng);if(n)w.name=n}
+ save();renderAll(true);const ovk=overlapKm(d.route.coords,3);
+ toast(`🔄 Okruh ${fmtKm(d.route.distance/1000)} hotový${ovk>2?` (terén tu núti ~${Math.round(ovk)} km ísť po tej istej ceste)`:''} – ďalší variant tým istým tlačidlom`,5000)}
 /* ---------- Časový plán ---------- */
 function sunTimes(date,lat,lng){if(!date)return null;const r=Math.PI/180;const J=Math.round(new Date(date+'T12:00:00Z').getTime()/864e5+2440587.5);
  const n=J-2451545+0.0008,Js=n-lng/360,M=((357.5291+0.98560028*Js)%360+360)%360;const C=1.9148*Math.sin(M*r)+0.02*Math.sin(2*M*r)+0.0003*Math.sin(3*M*r);
@@ -4180,7 +4191,7 @@ const scoreCls=v=>v>=75?'b-ok':v>=50?'b-warn':'b-bad';
 /* ---------- Tankovanie ---------- */
 async function fuelPlan(){const d=day(),t=trip();const c=routeCoords(d);if(c.length<2||(d.route&&d.route.straight)){toast('Najprv vytvor trasu');return}
  const rs=routeSample(d),tot=rs.cum[rs.cum.length-1];toast('⛽ Hľadám čerpacie stanice na trase…',4000);
- try{const j=await overpass(`[out:json][timeout:60];nwr[amenity=fuel]${areaFilter(d,1200)};out center tags;`);
+ try{let j;try{j=await overpass(`[out:json][timeout:25];nwr[amenity=fuel]${areaFilter(d,1200)};out center tags;`,12000)}catch(e){toast('⛽ Hľadám cez záložný server…',8000);j=await nominatimFuel(d)}
   const st=j.elements.map(e=>{const tg=e.tags||{};const lat=e.lat!=null?e.lat:e.center&&e.center.lat,lng=e.lon!=null?e.lon:e.center&&e.center.lon;if(lat==null)return null;let bi=0,bd=1e9;for(let k=0;k<rs.R.length;k+=2){const dd=hav(rs.R[k],[lat,lng]);if(dd<bd){bd=dd;bi=k}}
    return {id:'f_'+e.type[0]+e.id,lat:+lat.toFixed(6),lng:+lng.toFixed(6),name:tg.name||tg.brand||'Čerpacia stanica',brand:tg.brand||'',pos:rs.cum[bi],off:bd,h24:tg.opening_hours==='24/7'}}).filter(x=>x&&x.off<=1.3).sort((a,b)=>a.pos-b.pos);
   const range=+t.tankRange||250,lim=range*0.8;let pos=0;const pick=[];let gap=false;
@@ -4191,6 +4202,12 @@ async function fuelPlan(){const d=day(),t=trip();const c=routeCoords(d);if(c.len
   if(gap)toast(`⚠️ Na úseku za ${Math.round(pos)}. km sa v dosahu nádrže (${range} km) nenašla čerpacia stanica!`,6000);
   else toast(pick.length?`⛽ Naplánované ${pick.length}× tankovanie (pri ~80 % dojazdu). Na trase je ${st.length} staníc.`:`Na jednu nádrž (${range} km) to dáš – na trase je ${st.length} staníc.`,5000)}
  catch(e){toast('⚠️ '+e.message,5000)}}
+async function nominatimFuel(d){const rs=routeSample(d);const pts=resample(rs.R,20);if(pts[pts.length-1]!==rs.R[rs.R.length-1])pts.push(rs.R[rs.R.length-1]);const seen=new Map();
+ for(let i=0;i<pts.length;i++){const a=pts[Math.max(0,i-1)],b=pts[i];const pad=0.06;const w=Math.min(a[1],b[1])-pad,e=Math.max(a[1],b[1])+pad,n=Math.max(a[0],b[0])+pad*0.7,so=Math.min(a[0],b[0])-pad*0.7;
+  try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&amenity=fuel&viewbox=${w.toFixed(4)},${n.toFixed(4)},${e.toFixed(4)},${so.toFixed(4)}&bounded=1&limit=40`);const j=await r.json();
+   (j||[]).forEach(x=>seen.set(x.osm_type+x.osm_id,{type:x.osm_type||'node',id:x.osm_id,lat:+x.lat,lon:+x.lon,tags:{name:x.name||'',brand:x.name||''}}))}catch(err){}
+  toast(`⛽ Záložný server: úsek ${i+1}/${pts.length}…`,3000);await new Promise(r=>setTimeout(r,1100))}
+ if(!seen.size)throw new Error('Čerpacie stanice sa teraz nepodarilo načítať, skús o chvíľu.');return {elements:[...seen.values()]}}
 /* ---------- Dažďový radar ---------- */
 let radarLayer=null;
 async function toggleRadar(){if(radarLayer&&map.hasLayer(radarLayer)){map.removeLayer(radarLayer);$('#radarBtn').classList.remove('active');return}
@@ -4226,7 +4243,9 @@ const onGoogleBase=()=>!!(gLayer&&map.hasLayer(gLayer));
 function purgeOld(d){const lim=Date.now()-30*864e5;const before=(d.sug||[]).length;d.sug=(d.sug||[]).filter(x=>x.src!=='g'||(x.fetched||0)>lim);return before!==d.sug.length}
 function corridorPts(d,maxN=140){const c=routeCoords(d);if(c.length<2)return null;let step=2;let p=resample(c,step);while(p.length>maxN){step*=1.5;p=resample(c,step)}return p}
 function areaFilter(d,R){const p=corridorPts(d);if(p)return `(around:${R},${p.map(x=>x[0].toFixed(4)+','+x[1].toFixed(4)).join(',')})`;const b=map.getBounds();return `(${b.getSouth().toFixed(4)},${b.getWest().toFixed(4)},${b.getNorth().toFixed(4)},${b.getEast().toFixed(4)})`}
-async function overpass(q){const r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)});if(!r.ok)throw new Error('Overpass server je zaneprázdnený ('+r.status+'), skús o chvíľu.');return r.json()}
+async function overpass(q,tmo){const urls=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter'];let last='';
+ for(const u of urls){const ctl=new AbortController();const tm=setTimeout(()=>ctl.abort(),tmo||30000);try{const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q),signal:ctl.signal});if(r.ok)return await r.json();last=r.status}catch(e){last=e.name==='AbortError'?'neodpovedá':e.message}finally{clearTimeout(tm)}}
+ throw new Error('Servery OpenStreetMap (Overpass) sú teraz preťažené ('+last+'), skús o chvíľu.')}
 function mergeSug(d,items,cats){d.sug=d.sug||[];d.hidden=d.hidden||[];const keep=d.sug.filter(x=>!items.some(n=>n.id===x.id));d.sug=keep.concat(items.filter(n=>!d.hidden.includes(n.id)))}
 
 async function gSearch(){
@@ -4372,7 +4391,7 @@ async function offlineMaps(days){if(!('caches' in window)||!location.protocol.st
   for(let z=6;z<=Math.min(15,zmax);z++){const rr=z>=12?1:0;pts.forEach(p=>{const [x,y]=tileXY(p[0],p[1],z);for(let dx=-rr;dx<=rr;dx++)for(let dy=-rr;dy<=rr;dy++)set.add(z+'/'+(x+dx)+'/'+(y+dy))})}});
  const list=[...set];if(!list.length){toast('Najprv vytvor trasu');return}
  if(!confirm(`Stiahne sa ${list.length.toLocaleString('sk-SK')} dlaždíc mapy (cca ${Math.round(list.length*0.018)} MB) pre trasy a okolie. Pokračovať?`))return;
- const cache=await caches.open('tiles-v1');let done=0,fail=0,i=0;const worker=async()=>{while(i<list.length){const k=list[i++];const url=`https://a.basemaps.cartocdn.com/rastertiles/voyager/${k}.png`;
+ const cache=await caches.open('tiles-v1');let done=0,fail=0,i=0;const worker=async()=>{while(i<list.length){const k=list[i++];const [z,x,y]=k.split('/');const url=`https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${z}/${y}/${x}`;
   try{if(!(await cache.match(url))){const r=await fetch(url,{mode:'cors'});if(r.ok)await cache.put(url,r);else fail++}}catch(e){fail++}done++;if(done%50===0)toast(`📥 Sťahujem mapu ${done}/${list.length}…`,3000)}};
  await Promise.all([1,2,3,4,5,6].map(worker));toast(fail?`📥 Hotovo, ${fail} dlaždíc zlyhalo – skús znova`:`✅ Mapa je offline (${list.length} dlaždíc) – funguje aj bez signálu`,5000)}
 

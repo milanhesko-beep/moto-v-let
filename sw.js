@@ -1,5 +1,5 @@
 // Moto Výlet – service worker: offline aplikácia + uložené mapové dlaždice
-const SHELL = 'mv-shell-v1';
+const SHELL = 'mv-shell-v2';
 const TILES = 'tiles-v1';
 const SHELL_FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
@@ -9,7 +9,7 @@ self.addEventListener('install', e => {
 });
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 
-const isTile = u => /basemaps\.cartocdn\.com|tile\.opentopomap\.org|arcgisonline\.com\/ArcGIS\/rest\/services\/World_(Imagery|Street_Map)/.test(u);
+const isTile = u => /basemaps\.cartocdn\.com|tile\.opentopomap\.org|arcgisonline\.com\/ArcGIS\/rest\/services\/World_(Imagery|Street_Map|Topo_Map)/.test(u);
 const norm = u => u.replace(/:\/\/[a-d]\.basemaps\.cartocdn\.com/, '://a.basemaps.cartocdn.com')
                    .replace(/:\/\/[a-c]\.tile\.opentopomap\.org/, '://a.tile.opentopomap.org');
 
