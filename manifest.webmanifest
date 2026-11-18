@@ -1,0 +1,16 @@
+{
+  "name": "Moto Výlet – Plánovač",
+  "short_name": "Moto Výlet",
+  "description": "Plánovač moto výletov – trasy, kľukaté cesty, počasie, ubytovanie, výdavky a fotky.",
+  "lang": "sk",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#121417",
+  "theme_color": "#121417",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
