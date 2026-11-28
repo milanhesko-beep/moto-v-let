@@ -1,0 +1,124 @@
+rules_version = '2';
+// Pravidlá pre komunitu Moto Výlet – vlož ich vo Firebase konzole: Firestore Database → Rules → Publish
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function isOwner() { return signedIn() && resource.data.uid == request.auth.uid; }
+    function creatingAsMe() { return signedIn() && request.resource.data.uid == request.auth.uid; }
+    function str(v, max) { return v is string && v.size() <= max; }
+    // mení sa len jedno pole (mapa) a v nej len kľúč prihláseného používateľa
+    function onlyMyKeyIn(field) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([field])
+        && request.resource.data[field].diff(resource.data[field]).affectedKeys().hasOnly([request.auth.uid]);
+    }
+
+    match /routes/{id} {
+      allow read: if true;
+      allow create: if creatingAsMe()
+        && str(request.resource.data.title, 100)
+        && str(request.resource.data.desc, 4000)
+        && (!('story' in request.resource.data) || str(request.resource.data.story, 8000))
+        && (!('gallery' in request.resource.data) || (request.resource.data.gallery is list && request.resource.data.gallery.size() <= 6))
+        && request.resource.data.ratings is map && request.resource.data.ratings.size() == 0;
+      allow update: if isOwner() || isAdmin()
+        || (signedIn() && onlyMyKeyIn('ratings')
+            && request.resource.data.ratings[request.auth.uid] is int
+            && request.resource.data.ratings[request.auth.uid] >= 1
+            && request.resource.data.ratings[request.auth.uid] <= 5);
+      allow delete: if isOwner() || isAdmin();
+    }
+
+    match /routeGeo/{id} {
+      allow read: if true;
+      allow create: if creatingAsMe() && str(request.resource.data.p, 400000);
+      allow delete: if isOwner() || isAdmin();
+    }
+
+    match /comments/{id} {
+      allow read: if true;
+      allow create: if creatingAsMe() && str(request.resource.data.text, 1500) && str(request.resource.data.name, 40);
+      allow delete: if isOwner() || isAdmin();
+    }
+
+    match /posts/{id} {
+      allow read: if true;
+      allow create: if creatingAsMe() && str(request.resource.data.text, 1500) && str(request.resource.data.name, 40)
+        && str(request.resource.data.channel, 30);
+      allow delete: if isOwner() || isAdmin();
+    }
+
+    match /events/{id} {
+      allow read: if true;
+      allow create: if creatingAsMe() && str(request.resource.data.title, 100) && str(request.resource.data.desc, 3000);
+      allow update: if isOwner() || isAdmin() || (signedIn() && onlyMyKeyIn('going'));
+      allow delete: if isOwner() || isAdmin();
+    }
+
+    match /users/{uid} {
+      allow read: if true;
+      allow write: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /reports/{id} {
+      allow create: if creatingAsMe() && str(request.resource.data.reason, 500);
+      allow read, delete: if isAdmin();
+    }
+
+    // 👥 skupinová jazda – polohy členov (id = KÓD_uid)
+    match /ridepos/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid
+        && id == request.resource.data.rideId + '_' + request.auth.uid
+        && str(request.resource.data.rideId, 10) && str(request.resource.data.name, 40)
+        && request.resource.data.lat is number && request.resource.data.lng is number;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // ⚠️ hlásenia na ceste (olej, štrk, polícia…)
+    match /hazards/{id} {
+      allow read: if true;
+      allow create: if creatingAsMe() && str(request.resource.data.type, 20) && str(request.resource.data.name, 40)
+        && request.resource.data.lat is number && request.resource.data.lng is number
+        && request.resource.data.exp is int && request.resource.data.exp <= request.time.toMillis() + 691200000
+        && request.resource.data.up is map && request.resource.data.up.size() == 0
+        && request.resource.data.gone is map && request.resource.data.gone.size() == 0;
+      allow update: if isOwner() || isAdmin() || (signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['up', 'gone', 'exp'])
+        && request.resource.data.up.diff(resource.data.up).affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.gone.diff(resource.data.gone).affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.exp is int && request.resource.data.exp <= request.time.toMillis() + 691200000);
+      allow delete: if isOwner() || isAdmin();
+    }
+
+    // 🆘 motorkári ochotní pomôcť (telefón vidia len prihlásení)
+    match /helpers/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid && request.resource.data.uid == uid
+        && str(request.resource.data.name, 40) && str(request.resource.data.phone, 30) && str(request.resource.data.note, 500)
+        && request.resource.data.offers is list && request.resource.data.offers.size() <= 10;
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // 📍 moto miesta komunity
+    match /places/{id} {
+      allow read: if true;
+      allow create: if creatingAsMe() && str(request.resource.data.name, 80) && str(request.resource.data.desc, 1500)
+        && str(request.resource.data.web, 200)
+        && request.resource.data.lat is number && request.resource.data.lng is number
+        && request.resource.data.ratings is map && request.resource.data.ratings.size() == 0;
+      allow update: if isOwner() || isAdmin()
+        || (signedIn() && onlyMyKeyIn('ratings')
+            && request.resource.data.ratings[request.auth.uid] is int
+            && request.resource.data.ratings[request.auth.uid] >= 1
+            && request.resource.data.ratings[request.auth.uid] <= 5);
+      allow delete: if isOwner() || isAdmin();
+    }
+
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;   // moderátora pridáš ručne vo Firebase konzole
+    }
+  }
+}

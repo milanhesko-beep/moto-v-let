@@ -1,5 +1,5 @@
 // Moto Výlet – service worker: offline aplikácia + uložené mapové dlaždice
-const SHELL = 'mv-shell-v2';
+const SHELL = 'mv-shell-v3';
 const TILES = 'tiles-v1';
 const SHELL_FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 

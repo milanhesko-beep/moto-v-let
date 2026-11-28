@@ -3850,6 +3850,24 @@ tfoot td{font-weight:700}
 #lightbox img{max-width:94vw;max-height:84vh;border-radius:8px}
 #lightbox .lbcap{color:#ddd}
 #lightbox .lbnav{display:flex;gap:10px}
+.xal{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:3000;background:rgba(10,12,16,.94);border:4px solid #ef4444;border-radius:20px;padding:12px 20px;display:flex;align-items:center;gap:16px;box-shadow:0 8px 30px rgba(0,0,0,.6);max-width:96vw}
+.xal.haz{border-color:#f5c542}.xal.grp{border-color:#ff7a1a}.xal.brd{border-color:#3ea6ff}
+.xsign{width:104px;height:104px;border-radius:50%;background:#fff;border:12px solid #e11d1d;color:#111;font:800 42px/80px system-ui,sans-serif;text-align:center;flex:none;box-sizing:border-box}
+.xsign.sm{width:58px;height:58px;border-width:7px;font-size:22px;line-height:44px;margin:0 auto}
+.xal .xt{font:800 22px system-ui,sans-serif;color:#fff;text-transform:uppercase}.xal .xd{font:800 38px system-ui,sans-serif;color:#ffd166}
+@keyframes xpulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.8)}50%{box-shadow:0 0 0 18px rgba(239,68,68,0)}}
+.xal.pulse{animation:xpulse 1s infinite}
+body.overspd #rpSpd{color:#ef4444!important}body.overspd #rpLim{animation:xpulse 1s infinite}
+.camic{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid #e11d1d;color:#111;font:700 10px/18px system-ui;text-align:center;box-sizing:border-box;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.grpic{width:30px;height:30px;border-radius:50%;background:#ff7a1a;border:3px solid #fff;color:#fff;font:800 14px/24px system-ui;text-align:center;box-sizing:border-box;position:relative;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.grpic span{position:absolute;top:28px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;font:600 11px system-ui;padding:1px 5px;border-radius:6px;white-space:nowrap}.grpic.old{background:#6b7280}
+.hazgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.hazgrid button{min-width:0;width:100%;white-space:normal;padding:10px 4px;font-size:13px;line-height:1.2;justify-content:center;flex-direction:column;min-height:86px}
+label.chk{display:flex;gap:8px;align-items:center;margin:8px 0;color:var(--text);font-size:14px}label.chk input{width:auto}
+#xReplay{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:2900;background:var(--panel);border:2px solid var(--acc);border-radius:14px;padding:8px 12px;display:flex;gap:8px;align-items:center;max-width:96vw;flex-wrap:wrap;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+#xReplay input[type=range]{width:220px}#xReplay select{width:auto}
+.xal .xd{white-space:nowrap}.xal .xt{white-space:nowrap}
+@media (max-width:860px){body.riding aside,body.riding header{display:none}body.riding .ridepanel{grid-template-columns:repeat(3,1fr)}
+ .xal{top:auto;bottom:16px;padding:10px 14px;gap:12px}.xsign{width:86px;height:86px;border-width:10px;font-size:34px;line-height:66px}.xal .xd{font-size:30px}.xal .xt{font-size:18px}}
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--acc);padding:10px 16px;border-radius:10px;z-index:4000;display:none;max-width:90vw}
 canvas#elev{width:100%;height:160px;display:block;background:#0f1215;border-radius:8px;border:1px solid var(--line)}
 .chk{display:flex;gap:8px;align-items:center;padding:5px 0}
@@ -3991,12 +4009,12 @@ function initMap(){
  osm.addTo(map);BASES={'Cestná mapa':osm,'Topografická (Esri)':street,'Turistická / reliéf':topo,'Satelit':sat};if(location.protocol.startsWith('http'))BASES['OpenStreetMap']=osmStd;layerCtl=L.control.layers(BASES).addTo(map);map.on('baselayerchange',()=>{if(S.view==='day')drawMap()});
  L.control.scale({imperial:false}).addTo(map);
  L_other=L.layerGroup().addTo(map);L_route=L.layerGroup().addTo(map);L_wp=L.layerGroup().addTo(map);L_poi=L.layerGroup().addTo(map);L_acc=L.layerGroup().addTo(map);L_search=L.layerGroup().addTo(map);L_sug=L.layerGroup().addTo(map);
- map.on('click',onMapClick);
+ map.on('click',e=>{if(S.view==='community'&&X.pick){X.pick(e.latlng);return}onMapClick(e)});
 }
 const wpIcon=n=>L.divIcon({className:'',html:`<div class="wpicon">${n}</div>`,iconSize:[26,26],iconAnchor:[13,13]});
 const emIcon=e=>L.divIcon({className:'',html:`<div class="poiicon">${e}</div>`,iconSize:[24,24],iconAnchor:[12,22]});
 function routeCoords(d){if(d.route&&d.route.coords&&d.route.coords.length)return d.route.coords;return d.waypoints.map(w=>[w.lat,w.lng])}
-function drawMap(fit){
+function drawMap0(fit){
  if(!map)return;[L_other,L_route,L_wp,L_poi,L_acc,L_sug].forEach(l=>l.clearLayers());
  if(S.view==='community'){drawCommunityMap(fit);return}
  const t=trip();if(!t)return;const bounds=[];
@@ -4225,7 +4243,7 @@ async function rerouteAll(){const t=trip();for(const d of t.days)if(d.waypoints.
 
 /* ================= Návrhy: Google + OpenStreetMap ================= */
 const SUG_CATS={food:{l:'Reštaurácie',e:'🍴',g:['restaurant'],poi:'food'},cafe:{l:'Kaviarne',e:'☕',g:['cafe'],poi:'cafe'},hotel:{l:'Ubytovanie',e:'🏨',g:['lodging'],poi:'hotel'},sight:{l:'Pamiatky a atrakcie',e:'🏛️',g:['tourist_attraction','historical_landmark','museum'],poi:'castle'},fuel:{l:'Čerpacie stanice',e:'⛽',g:['gas_station'],poi:'fuel'},
- fuelstop:{l:'Odporúčané tankovanie',e:'⛽',poi:'fuel'},curvy:{l:'Kľukaté moto úseky',e:'🏍️'},pass:{l:'Sedlá',e:'⛰️',poi:'pass'},view:{l:'Vyhliadky',e:'🏞️',poi:'view'},castle:{l:'Hrady a zámky',e:'🏰',poi:'castle'}};
+ fuelstop:{l:'Odporúčané tankovanie',e:'⛽',poi:'fuel'},curvy:{l:'Kľukaté moto úseky',e:'🏍️'},pass:{l:'Sedlá',e:'⛰️',poi:'pass'},view:{l:'Vyhliadky',e:'🏞️',poi:'view'},castle:{l:'Hrady a zámky',e:'🏰',poi:'castle'},moto:{l:'Moto servisy a obchody',e:'🔧',poi:'service'}};
 const G_CATS=['food','cafe','hotel','sight','fuel'];
 function lsGet(k,def){try{const v=localStorage.getItem('mvp_'+k);return v==null?def:JSON.parse(v)}catch(e){return def}}
 function lsSet(k,v){try{localStorage.setItem('mvp_'+k,JSON.stringify(v))}catch(e){}}
@@ -4337,7 +4355,7 @@ function tabSug(d,t){
  <div class="card"><h4>🏍️ Zadarmo z OpenStreetMap</h4>
  <div class="small muted">${routeCoords(d).length>1?'Hľadá sa v páse okolo trasy dňa.':'Deň nemá trasu – hľadá sa v aktuálnom výreze mapy (nepriblížuj príliš ďaleko).'}</div>
  <label>Šírka pásu okolo trasy</label><select onchange="setG('osmR',+this.value)">${[[3000,'± 3 km'],[5000,'± 5 km'],[10000,'± 10 km'],[20000,'± 20 km']].map(([v,l])=>`<option value="${v}" ${g.osmR==v?'selected':''}>${l}</option>`).join('')}</select>
- <div class="btnrow"><button class="primary" onclick="osmCurvy()">🏍️ Nájsť kľukaté úseky</button><button onclick="fuelPlan()">⛽ Naplánovať tankovanie</button><button onclick="osmSpots()">⛰️ Sedlá, vyhliadky, hrady</button></div>
+ <div class="btnrow"><button class="primary" onclick="osmCurvy()">🏍️ Nájsť kľukaté úseky</button><button onclick="fuelPlan()">⛽ Naplánovať tankovanie</button><button onclick="osmSpots()">⛰️ Sedlá, vyhliadky, hrady</button><button onclick="osmMoto()">🔧 Moto servisy a obchody</button></div>
  <div class="small muted">Kľukaté úseky sa vypočítajú z tvaru ciest (I., II. a III. triedy) – zobrazia sa ako fialové čiary. „➕ Do trasy“ ich vloží do trasy dňa.</div>
  ${(d.hidden||[]).length?`<div class="small muted" style="margin-top:8px">Skrytých návrhov: ${d.hidden.length} <button class="sm" onclick="unhideAll()">Obnoviť skryté</button></div>`:''}</div></div>
  ${groups.length?groups.map(c=>{const it=list.filter(x=>x.cat===c).sort((a,b)=>c==='fuelstop'?a.pos-b.pos:c==='curvy'?b.score-a.score:((b.rating||0)-(a.rating||0))||((b.count||0)-(a.count||0)));
@@ -4422,7 +4440,7 @@ function voiceCheck(d,n,ll){if(!n)return;const said=VOICE.said;
 const RIDE={watch:null,lock:null,pos:null,follow:true,rec:false,lastSave:0,me:null,trk:null};
 function trackStats(tr){if(!tr||tr.length<2)return null;let km=0,mov=0,mx=0;for(let i=1;i<tr.length;i++){const dk=hav(tr[i-1],tr[i]),dt=tr[i][2]-tr[i-1][2];km+=dk;if(dt>0&&dt<300)mov+=dt;const v=tr[i][3]!=null?tr[i][3]:(dt>0?dk/dt*3600:0);if(v<250&&v>mx)mx=v}
  return {km,h:mov/3600,avg:mov?km/(mov/3600):0,max:mx,start:tr[0][2],end:tr[tr.length-1][2]}}
-function trackCard(d){const ts=trackStats(d.track),s=stats(d);if(!ts)return '';
+function trackCard0(d){const ts=trackStats(d.track),s=stats(d);if(!ts)return '';
  return `<div class="card" style="border-color:#22c55e"><h4>📍 Zaznamenaná jazda</h4><div class="stats" style="margin:0 0 8px">
  <div class="stat"><div class="v">${fmtKm(ts.km)}</div><div class="l">Najazdené${s.km?' (plán '+Math.round(s.km)+')':''}</div></div>
  <div class="stat"><div class="v">${fmtH(ts.h)}</div><div class="l">V pohybe${s.h?' (plán '+fmtH(s.h)+')':''}</div></div>
@@ -4430,16 +4448,17 @@ function trackCard(d){const ts=trackStats(d.track),s=stats(d);if(!ts)return '';
  <div class="stat"><div class="v">${Math.round(ts.max)} km/h</div><div class="l">Max</div></div></div>
  <div class="small muted">${new Date(ts.start*1000).toLocaleTimeString('sk-SK',{hour:'2-digit',minute:'2-digit'})} – ${new Date(ts.end*1000).toLocaleTimeString('sk-SK',{hour:'2-digit',minute:'2-digit'})} · zelená čiara na mape</div>
  <div class="btnrow"><button class="sm" onclick="exportTrack()">📤 GPX jazdy</button><button class="sm danger" onclick="if(confirm('Zmazať záznam jazdy?')){day().track=[];save();renderAll()}">🗑 Zmazať záznam</button></div></div>`}
-function startRide(){const d=day();if(!d)return;VOICE.said=new Set();VOICE.off=false;if(VOICE.on)say('Jazda spustená. '+(d.waypoints.length>1?'Cieľ '+d.waypoints[d.waypoints.length-1].name:''));S.view='ride';S.mode=null;RIDE.follow=true;renderAll(true);startGPS()}
-function leaveRide(){if(RIDE.watch!=null)stopGPS();if(RIDE.me){RIDE.me.remove();RIDE.me=null}}
+function startRide(){const d=day();if(!d)return;VOICE.said=new Set();VOICE.off=false;if(VOICE.on)say('Jazda spustená. '+(d.waypoints.length>1?'Cieľ '+d.waypoints[d.waypoints.length-1].name:''));S.view='ride';S.mode=null;RIDE.follow=true;renderAll(true);startGPS();extRideStart(d)}
+function leaveRide(){extRideEnd();if(RIDE.watch!=null)stopGPS();if(RIDE.me){RIDE.me.remove();RIDE.me=null}}
 function startGPS(){if(!navigator.geolocation){toast('Tento prehliadač nemá prístup ku GPS');return}if(RIDE.watch!=null)return;
  RIDE.watch=navigator.geolocation.watchPosition(onPos,e=>{const el=$('#rpInfo');if(e.code===1){const m='Prístup k polohe zamietnutý – povoľ polohu pre túto stránku v prehliadači.';if(el)el.textContent=m;toast(m,5000)}else if(el&&!RIDE.pos)el.textContent='Čakám na GPS signál…'},{enableHighAccuracy:true,maximumAge:2000,timeout:30000});wakeOn()}
 async function wakeOn(){try{if('wakeLock' in navigator)RIDE.lock=await navigator.wakeLock.request('screen')}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&RIDE.watch!=null)wakeOn()});
-function stopGPS(){if(RIDE.watch!=null)navigator.geolocation.clearWatch(RIDE.watch);RIDE.watch=null;RIDE.rec=false;try{RIDE.lock&&RIDE.lock.release()}catch(e){}RIDE.lock=null;save()}
+function stopGPS(){garFlush();if(RIDE.watch!=null)navigator.geolocation.clearWatch(RIDE.watch);RIDE.watch=null;RIDE.rec=false;try{RIDE.lock&&RIDE.lock.release()}catch(e){}RIDE.lock=null;save()}
 function toggleRec(){RIDE.rec=!RIDE.rec;if(RIDE.rec&&RIDE.watch==null)startGPS();save();renderRideHead();toast(RIDE.rec?'⏺ Nahrávam jazdu':'⏸ Nahrávanie pozastavené')}
 function onPos(p){const d=day();if(!d)return;const ll=[p.coords.latitude,p.coords.longitude];RIDE.pos={ll,spd:p.coords.speed,acc:p.coords.accuracy,t:p.timestamp||Date.now()};
  if(RIDE.rec&&(p.coords.accuracy||0)<60){d.track=d.track||[];const last=d.track[d.track.length-1];if(!last||hav(last,ll)>0.015){d.track.push([+ll[0].toFixed(6),+ll[1].toFixed(6),Math.round(RIDE.pos.t/1000),p.coords.speed!=null?+(p.coords.speed*3.6).toFixed(1):null]);if(Date.now()-RIDE.lastSave>15000){save();RIDE.lastSave=Date.now()}}}
+ try{extOnPos(d,ll,p)}catch(e){console.warn('ext',e)}
  updateRide()}
 function navInfo(d,ll){const rs=routeSample(d);if(rs.R.length<2)return null;let bi=0,bd=1e9;for(let k=0;k<rs.R.length;k++){const dd=hav(rs.R[k],ll);if(dd<bd){bd=dd;bi=k}}
  const tot=rs.cum[rs.cum.length-1],cur=rs.cum[bi];const tl=timeline(d);const nx=tl.find(x=>x.km>cur+0.05&&x.i>0);const spdAvg=d.route&&d.route.duration?d.route.distance/1000/(d.route.duration/3600):60;
@@ -4457,9 +4476,9 @@ function updateRide(){if(S.view!=='ride'||!RIDE.pos)return;const d=day(),ll=RIDE
  else set('#rpInfo',`Poloha ±${Math.round(RIDE.pos.acc||0)} m${RIDE.rec?' · ⏺ nahrávam':''} – deň nemá trasu`)}
 function renderRideHead(){const d=day(),i=dayIndex(d);
  $('#viewHead').innerHTML=`<div class="headrow"><h2>🏍️ Jazda – Deň ${i+1}${d.title?' – '+esc(d.title):''}</h2><div class="grow"></div>
- <button class="${RIDE.rec?'active':'primary'}" onclick="toggleRec()">${RIDE.rec?'⏸ Pauza':'⏺ Nahrávať jazdu'}</button><button onclick="sharePos()">📤 Poslať polohu</button><button class="${VOICE.on?'active':''}" onclick="toggleVoice()">${VOICE.on?'🔊 Hlas':'🔇 Hlas'}</button>
+ <button class="${RIDE.rec?'active':'primary'}" onclick="toggleRec()">${RIDE.rec?'⏸ Pauza':'⏺ Nahrávať jazdu'}</button><button onclick="sharePos()">📤 Poloha</button><button class="${G.code?'active':''}" onclick="grpDialog()">👥 Skupina${G.code?' ('+(Object.keys(G.mem).length+1)+')':''}</button><button onclick="hazDialog()">⚠️ Hlásiť</button><button onclick="sosOpen()" title="Pomoc na ceste">🆘</button><button onclick="xSettings()" title="Nastavenia upozornení">⚙️</button><button class="${VOICE.on?'active':''}" onclick="toggleVoice()">${VOICE.on?'🔊 Hlas':'🔇 Hlas'}</button>
  <button class="${RIDE.follow?'active':''}" onclick="RIDE.follow=!RIDE.follow;renderRideHead();updateRide()">🎯 Sledovať</button><button onclick="leaveRide();openDay('${d.id}')">✕ Koniec</button></div>
- <div class="stats ridepanel"><div class="stat"><div class="v" id="rpSpd" style="font-size:30px">–</div><div class="l">km/h</div></div><div class="stat"><div class="v" id="rpNext">–</div></div><div class="stat"><div class="v" id="rpRem">–</div></div></div>
+ <div class="stats ridepanel"><div class="stat"><div class="v" id="rpSpd" style="font-size:30px">–</div><div class="l">km/h</div></div><div class="stat" id="rpLimBox" style="display:none"><div id="rpLim" class="xsign sm"></div><div class="l">limit</div></div><div class="stat" id="rpLeanBox" style="display:none"><div class="v" id="rpLean" style="font-size:24px">–</div><div class="l">náklon</div></div><div class="stat"><div class="v" id="rpNext">–</div></div><div class="stat"><div class="v" id="rpRem">–</div></div></div>
  <div class="small" id="rpInfo" style="margin:-4px 0 8px">Čakám na GPS…</div>`;if(RIDE.pos)updateRide()}
 function renderRide(){renderRideHead();const d=day();
  $('#content').innerHTML=`${d.track&&d.track.length>1?trackCard(d):''}<div class="card small muted">💡 Displej ostane zapnutý, kým je stránka otvorená. Pri zamknutom mobile prehliadač nahrávanie preruší – na celodenný záznam použi radšej navigačnú appku a GPX jazdy si importuj. Na navigáciu s hlasom exportuj trasu do Calimoto / Kurviger / OsmAnd.</div>`}
@@ -4496,7 +4515,7 @@ const CDB_FIRE = {
   async signIn(){ const p=new firebase.auth.GoogleAuthProvider(); try{ await FB.auth.signInWithPopup(p); }catch(e){ if(/popup/i.test(e.code||'')) await FB.auth.signInWithRedirect(p); else throw e; } },
   signOut(){ return FB.auth.signOut(); },
   me(){ return FB.user; },
-  q(coll,o={}){ let r=FB.db.collection(coll); if(o.where) r=r.where(o.where[0],'==',o.where[1]); if(o.orderBy) r=r.orderBy(o.orderBy[0],o.orderBy[1]||'asc'); if(o.limit) r=r.limit(o.limit); return r; },
+  q(coll,o={}){ let r=FB.db.collection(coll); if(o.where) r=o.where.length===3?r.where(o.where[0],o.where[1],o.where[2]):r.where(o.where[0],'==',o.where[1]); if(o.orderBy) r=r.orderBy(o.orderBy[0],o.orderBy[1]||'asc'); if(o.limit) r=r.limit(o.limit); return r; },
   async list(coll,o){ const s=await this.q(coll,o).get(); return s.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})); },
   async get(coll,id){ const d=await FB.db.collection(coll).doc(id).get(); return d.exists?{id:d.id,...d.data({serverTimestamps:'estimate'})}:null; },
   async add(coll,data){ const r=await FB.db.collection(coll).add({...data,created:firebase.firestore.FieldValue.serverTimestamp()}); return r.id; },
@@ -4542,12 +4561,13 @@ async function onCommunityAuth(){
   if(S.view==='community') renderCommunity();
 }
 function myName(){ return (C.profile&&C.profile.name)||(C.user&&C.user.name)||'Motorkár'; }
-function setCTab(t){ C.tab=t; if(t==='legends') setTimeout(()=>drawMap(true),60); if(C.unsub&&t!=='forum'){ try{C.unsub()}catch(e){} C.unsub=null; } renderCommunity(); loadTab(); }
+function setCTab(t){ C.tab=t; if(t!=='places'){X.plForm=null;X.pick=null;X.pickLL=null;} if(t==='legends') setTimeout(()=>drawMap(true),60); if(C.unsub&&t!=='forum'){ try{C.unsub()}catch(e){} C.unsub=null; } renderCommunity(); loadTab(); }
 async function loadTab(){
   if(C.ready!=='ok') { renderCommunity(); return; }
   try{
     if(C.tab==='routes' && !C.routes){ C.routes=await CDB().list('routes',{orderBy:['created','desc'],limit:400}); renderCommunity(); drawMap(true); }
     if(C.tab==='forum') subscribeChannel(C.ch);
+    await extLoadTab();
     if(C.tab==='events' && !C.events){ C.events=await CDB().list('events',{orderBy:['date','asc'],limit:300}); renderCommunity(); drawMap(true); }
     if(C.tab==='profile' && C.user && !C.mine){ const [r,p,e]=await Promise.all([CDB().list('routes',{where:['uid',C.user.uid]}),CDB().list('posts',{where:['uid',C.user.uid]}),CDB().list('events',{where:['uid',C.user.uid]})]); C.mine={r,p,e}; renderCommunity(); }
   }catch(e){ toast('⚠️ Komunita: '+(e.message||e),5000); }
@@ -4556,10 +4576,10 @@ async function loadTab(){
 /* ---------- Render ---------- */
 function renderCommunity(){
   if(S.view!=='community') return;
-  const tabs=[['routes','🗺️ Trasy komunity'],['legends','🏆 Legendy Európy'],['forum','💬 Fórum'],['events','📅 Spoločné jazdy'],['profile',C.user?'👤 '+esc(myName()):'👤 Prihlásiť sa']];
+  const tabs=[['routes','🗺️ Trasy komunity'],['legends','🏆 Legendy Európy'],['forum','💬 Fórum'],['events','📅 Spoločné jazdy'],['places','📍 Moto miesta'],['sos','🆘 Pomoc'],['profile',C.user?'👤 '+esc(myName()):'👤 Prihlásiť sa']];
   $('#viewHead').innerHTML=`<div class="headrow"><h2>🌍 Komunita motorkárov</h2><div class="grow"></div>${C.tab==='routes'&&C.ready==='ok'?`<button class="sm primary" onclick="startShare()">＋ Zdieľať moju trasu</button>`:''}${C.tab==='events'&&C.ready==='ok'?`<button class="sm primary" onclick="newEventForm()">＋ Nová spoločná jazda</button>`:''}</div>
    <div class="tabs" style="margin-top:0">${tabs.map(([k,l])=>`<button class="${C.tab===k?'active':''}" onclick="setCTab('${k}')">${l}</button>`).join('')}</div>`;
-  const showMap=['routes','events','legends'].includes(C.tab);
+  const showMap=['routes','events','legends','places','sos'].includes(C.tab);
   $('#mapWrap').style.display=showMap?'block':'none'; if(showMap&&map) setTimeout(()=>map.invalidateSize(),50);
   let h='';
   if(C.tab==='legends') h=renderLegends();
@@ -4569,6 +4589,8 @@ function renderCommunity(){
   else if(C.tab==='routes') h=C.share?renderShareForm():(C.sel?renderRouteDetail():renderRouteList());
   else if(C.tab==='forum') h=renderForum();
   else if(C.tab==='events') h=C.evForm?renderEventForm():renderEvents();
+  else if(C.tab==='places') h=renderPlaces();
+  else if(C.tab==='sos') h=renderSos();
   else if(C.tab==='profile') h=renderProfile();
   $('#content').innerHTML=h;
   if(C.tab==='forum'){ const box=$('#chatBox'); if(box) box.scrollTop=box.scrollHeight; }
@@ -4587,7 +4609,7 @@ function saveFbCfg(){ const t=($('#fbcfgTa').value||''); const o={}; for(const k
 function filteredRoutes(){
   const f=C.f; let r=(C.routes||[]).slice();
   if(f.cc) r=r.filter(x=>x.cc===f.cc);
-  if(f.tag) r=r.filter(x=>(x.tags||[]).includes(f.tag));
+  if(f.tag==='__trav') r=r.filter(x=>x.story||(x.gallery||[]).length); else if(f.tag) r=r.filter(x=>(x.tags||[]).includes(f.tag));
   if(f.len) r=r.filter(x=>{ const k=x.km||0; return f.len==='s'?k<100:f.len==='m'?k>=100&&k<250:f.len==='l'?k>=250&&k<500:k>=500; });
   if(f.q){ const q=f.q.toLowerCase(); r=r.filter(x=>(x.title+' '+(x.desc||'')+' '+(x.region||'')+' '+(x.start&&x.start.name||'')).toLowerCase().includes(q)); }
   r.sort((a,b)=> f.sort==='new'?tsMs(b.created)-tsMs(a.created) : f.sort==='curvy'?(b.degKm||0)-(a.degKm||0) : (()=>{const A=avgR(a.ratings),B=avgR(b.ratings);return (B.a*Math.min(B.n,5)+3*Math.max(0,5-B.n))-(A.a*Math.min(A.n,5)+3*Math.max(0,5-A.n))||tsMs(b.created)-tsMs(a.created)})());
@@ -4601,7 +4623,7 @@ function renderRouteList(){
    <input style="flex:2;min-width:160px" placeholder="🔍 Hľadať (názov, oblasť…)" value="${esc(C.f.q)}" onchange="setF('q',this.value)">
    <select style="flex:1;min-width:120px" onchange="setF('cc',this.value)"><option value="">🌍 Všetky krajiny</option>${ccs.map(c=>`<option value="${c}" ${C.f.cc===c?'selected':''}>${flag(c)} ${c.toUpperCase()}</option>`).join('')}</select>
    <select style="flex:1;min-width:110px" onchange="setF('len',this.value)"><option value="">Dĺžka: všetky</option><option value="s" ${C.f.len==='s'?'selected':''}>do 100 km</option><option value="m" ${C.f.len==='m'?'selected':''}>100–250 km</option><option value="l" ${C.f.len==='l'?'selected':''}>250–500 km</option><option value="x" ${C.f.len==='x'?'selected':''}>nad 500 km</option></select>
-   <select style="flex:1;min-width:120px" onchange="setF('tag',this.value)"><option value="">Štítok: všetky</option>${RTAGS.map(t=>`<option ${C.f.tag===t?'selected':''}>${t}</option>`).join('')}</select>
+   <select style="flex:1;min-width:120px" onchange="setF('tag',this.value)"><option value="">Štítok: všetky</option><option value="__trav" ${C.f.tag==='__trav'?'selected':''}>📖 len cestopisy</option>${RTAGS.map(t=>`<option ${C.f.tag===t?'selected':''}>${t}</option>`).join('')}</select>
    <select style="flex:1;min-width:130px" onchange="setF('sort',this.value)"><option value="top" ${C.f.sort==='top'?'selected':''}>⭐ Najlepšie hodnotené</option><option value="new" ${C.f.sort==='new'?'selected':''}>🆕 Najnovšie</option><option value="curvy" ${C.f.sort==='curvy'?'selected':''}>🌀 Najkľukatejšie</option></select>
    <button onclick="C.routes=null;loadTab()" title="Obnoviť">🔄</button></div></div>
   ${list.length?list.map(routeCard).join(''):`<div class="empty">${C.routes.length?'Filtru nezodpovedá žiadna trasa.':'Zatiaľ tu nie je žiadna trasa – buď prvý! Naplánuj deň a klikni „＋ Zdieľať moju trasu“.'}</div>`}`;
@@ -4609,7 +4631,7 @@ function renderRouteList(){
 function routeCard(x){ const r=avgR(x.ratings); const cov=safeImg(x.cover);
   return `<div class="card" style="display:flex;gap:12px;cursor:pointer;align-items:center" onclick="openRoute('${esc(x.id)}')">
    ${cov?`<img src="${cov}" style="width:110px;height:80px;object-fit:cover;border-radius:8px;flex:none">`:`<div style="width:110px;height:80px;border-radius:8px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:30px;flex:none">${flag(x.cc)}</div>`}
-   <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:15px">${flag(x.cc)} ${esc(x.title)}</div>
+   <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:15px">${flag(x.cc)} ${esc(x.title)}${x.story||(x.gallery||[]).length?' <span title="Cestopis">📖</span>':''}</div>
    <div class="small muted">${esc(x.region||'')}${x.region?' · ':''}${Math.round(x.km||0)} km · ${fmtH(x.hours||0)}${x.degKm?' · '+curveClass(x.degKm)[2]+' '+curveClass(x.degKm)[0].toLowerCase():''}</div>
    <div class="small">${stars(r.a)} <span class="muted">${r.n?r.a.toFixed(1)+' ('+r.n+')':'bez hodnotenia'} · od ${esc(x.author||'?')} · ${ago(tsMs(x.created))}</span></div>
    ${(x.tags||[]).length?`<div class="small muted" style="margin-top:2px">${x.tags.slice(0,5).map(esc).join(' · ')}</div>`:''}</div></div>`; }
@@ -4623,7 +4645,7 @@ function renderRouteDetail(){ const x=C.sel; if(!x) return ''; const r=avgR(x.ra
    <div class="stats" style="margin-top:10px"><div class="stat"><div class="v">${Math.round(x.km||0)} km</div><div class="l">Dĺžka</div></div><div class="stat"><div class="v">${fmtH(x.hours||0)}</div><div class="l">Jazda</div></div>
    <div class="stat"><div class="v">${x.degKm?curveClass(x.degKm)[2]+' '+(x.share||0)+' %':'–'}</div><div class="l">${x.degKm?curveClass(x.degKm)[0]:'Kľukatosť'}</div></div><div class="stat"><div class="v">${r.n?r.a.toFixed(1):'–'} ★</div><div class="l">${r.n} hodnotení</div></div>${x.diff?`<div class="stat"><div class="v" style="font-size:15px">${esc(x.diff)}</div><div class="l">Náročnosť</div></div>`:''}${x.season?`<div class="stat"><div class="v" style="font-size:15px">${esc(x.season)}</div><div class="l">Najlepšie</div></div>`:''}</div>
    ${(x.tags||[]).length?`<div class="chips" style="margin-bottom:8px">${x.tags.map(t=>`<label style="cursor:default">${esc(t)}</label>`).join('')}</div>`:''}
-   ${x.desc?`<div style="white-space:pre-wrap;margin:8px 0">${esc(x.desc)}</div>`:''}
+   ${x.desc?`<div style="white-space:pre-wrap;margin:8px 0">${esc(x.desc)}</div>`:''}${travView(x)}
    ${(x.wps||[]).length?`<div class="small"><b>Trasa:</b> ${x.wps.map(w=>esc(w.name)).join(' → ')}</div>`:''}
    ${(x.pois||[]).length?`<div class="small" style="margin-top:4px"><b>Tipy na zastávky:</b> ${x.pois.map(p=>esc((POI_TYPES[p.type]||'⭐').split(' ')[0]+' '+p.name)).join(', ')}</div>`:''}
    <div class="btnrow" style="margin-top:10px"><button class="primary" ${C.selGeo?'':'disabled'} onclick="importCommunityRoute()">➕ Pridať do môjho výletu</button><button ${C.selGeo?'':'disabled'} onclick="downloadCommunityGPX()">📤 GPX</button>
@@ -4651,7 +4673,7 @@ async function startShare(fromDay){ if(S.view!=='community'){ await openCommunit
   const t=trip(); const cand=t.days.filter(d=>d.route&&!d.route.straight&&d.route.coords&&d.route.coords.length>1);
   if(!cand.length){ toast('Najprv si naplánuj trasu dňa – potom ju môžeš zdieľať.',4000); return; }
   const d=fromDay&&cand.find(x=>x.id===fromDay)||cand.find(x=>x.id===S.dayId)||cand[0];
-  C.share={dayId:d.id,title:d.title||'',desc:'',tags:[],diff:'',season:'',cover:'',cc:'',region:''}; renderCommunity();
+  C.share={dayId:d.id,title:d.title||'',desc:'',tags:[],diff:'',season:'',cover:'',cc:'',region:'',story:'',gal:[]}; renderCommunity();
   const s=d.route.coords[Math.floor(d.route.coords.length/2)]; const geo=await countryOf(s[0],s[1]); if(C.share&&C.share.dayId===d.id){ C.share.cc=geo.cc; C.share.region=C.share.region||geo.region; renderCommunity(); } }
 async function countryOf(lat,lng){ try{ const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=8&accept-language=sk`); const j=await r.json(); const a=j.address||{}; return {cc:(a.country_code||'').toLowerCase(),region:[a.state||a.county||'',a.country||''].filter(Boolean).join(', ')}; }catch(e){ return {cc:'',region:''}; } }
 function renderShareForm(){ const s=C.share,t=trip(); const days=t.days.filter(d=>d.route&&!d.route.straight&&d.route.coords&&d.route.coords.length>1); const d=t.days.find(x=>x.id===s.dayId); const st=stats(d),cv=curveSummary(d); const ph=S.photos.filter(p=>p.dayId===d.id);
@@ -4662,6 +4684,7 @@ function renderShareForm(){ const s=C.share,t=trip(); const days=t.days.filter(d
    <label>Názov trasy *</label><input id="shTitle" maxlength="100" value="${esc(s.title)}" placeholder="napr. Sedlá Nízkych Tatier – Čertovica a Donovaly" oninput="C.share.title=this.value">
    <div class="grid2"><div><label>Krajina</label><input maxlength="2" value="${esc(s.cc)}" placeholder="sk" oninput="C.share.cc=this.value.toLowerCase()"></div><div><label>Oblasť</label><input maxlength="80" value="${esc(s.region)}" oninput="C.share.region=this.value"></div></div>
    <label>Popis – čo ťa na trase baví, stav ciest, kde sa najesť, na čo si dať pozor</label><textarea maxlength="4000" oninput="C.share.desc=this.value">${esc(s.desc)}</textarea>
+   ${travForm(s,ph)}
    <label>Štítky</label><div class="chips">${RTAGS.map(tg=>`<label><input type="checkbox" ${s.tags.includes(tg)?'checked':''} onchange="C.share.tags=this.checked?[...C.share.tags,'${tg}']:C.share.tags.filter(x=>x!=='${tg}')">${tg}</label>`).join('')}</div>
    <div class="grid2"><div><label>Náročnosť</label><select onchange="C.share.diff=this.value"><option value="">—</option>${['🟢 ľahká','🟡 stredná','🔴 náročná'].map(v=>`<option ${s.diff===v?'selected':''}>${v}</option>`).join('')}</select></div>
    <div><label>Najlepšie obdobie</label><select onchange="C.share.season=this.value"><option value="">—</option>${['🌸 jar','☀️ leto','🍂 jeseň','jar – jeseň'].map(v=>`<option ${s.season===v?'selected':''}>${v}</option>`).join('')}</select></div></div>
@@ -4676,7 +4699,7 @@ async function publishRoute(){ const s=C.share,t=trip(),d=t.days.find(x=>x.id===
     const meta={title,desc:(s.desc||'').slice(0,4000),cc:(s.cc||'').slice(0,2),region:(s.region||'').slice(0,80),tags:s.tags.slice(0,10),diff:s.diff,season:s.season,km:Math.round(st.km*10)/10,hours:Math.round(st.h*100)/100,degKm:cv.degKm,share:cv.share,
       start:{lat:d.waypoints[0].lat,lng:d.waypoints[0].lng,name:d.waypoints[0].name},mid:{lat:mid[0],lng:mid[1]},wps:d.waypoints.slice(0,40).map(w=>({lat:+(+w.lat).toFixed(5),lng:+(+w.lng).toFixed(5),name:String(w.name||'').slice(0,80),stop:!!w.stop})),
       pois:d.pois.filter(p=>p.lat!=null).slice(0,40).map(p=>({type:p.type,name:String(p.name||'').slice(0,80),note:String(p.note||'').slice(0,300),lat:+(+p.lat).toFixed(5),lng:+(+p.lng).toFixed(5)})),
-      cover,uid:C.user.uid,author:myName(),ratings:{}};
+      cover,story:String(s.story||'').slice(0,8000),gallery:await galPack(s),uid:C.user.uid,author:myName(),ratings:{}};
     const id=await CDB().createRoute(meta,{uid:C.user.uid,p:encPoly(simplify(d.route.coords,0.00005))});
     C.share=null; C.routes=null; C.mine=null; C.busy=false; await loadTab(); openRoute(id); toast('🌍 Trasa je zverejnená – ďakujeme!',4000);
   }catch(e){ C.busy=false; renderCommunity(); toast('⚠️ '+e.message,5000); } }
@@ -4794,6 +4817,7 @@ function renderSide(){
  <button class="navbtn ${S.view==='checklist'?'active':''}" onclick="setView('checklist')">✅ Čo zbaliť / skontrolovať</button>
  <button class="navbtn ${S.view==='expenses'?'active':''}" onclick="setView('expenses')">💶 Výdavky</button>
  <button class="navbtn ${S.view==='gallery'?'active':''}" onclick="setView('gallery')">🖼️ Všetky fotky</button>
+ <button class="navbtn ${S.view==='garage'?'active':''}" onclick="setView('garage')">🔧 Garáž a servis${garDueCount()?` <span class="badge" style="background:var(--warn);color:#000">${garDueCount()}</span>`:''}</button>
  <button class="navbtn ${S.view==='community'?'active':''}" onclick="openCommunity()" style="border-color:var(--acc)">🌍 Komunita motorkárov</button></div>
  <div class="side-sec"><h3>Dni</h3>
  ${t.days.map((d,i)=>`<button class="daybtn ${(S.view==='day'||S.view==='ride')&&d.id===S.dayId?'active':''}" onclick="openDay('${d.id}')"><div class="t"><span class="dot" style="background:${DAY_COLORS[i%DAY_COLORS.length]}"></span>Deň ${i+1}${d.title?' – '+esc(d.title):''}</div><div class="s">${d.date?fmtDate(d.date):'bez dátumu'} · ${fmtKm(dayKm(d))}${d.pois.length?' · ⭐'+d.pois.length:''}${d.acc.name?' · 🏨':''}${(()=>{const m=motoScore(d);return m?' · 🏁'+m.sc:''})()}</div></button>`).join('')}
@@ -4813,6 +4837,7 @@ function renderMain(){
  else if(S.view==='gallery')renderGallery();
  else if(S.view==='ride'){if(!day()){S.view='overview';return renderMain()}renderRide()}
  else if(S.view==='community')renderCommunity();
+ else if(S.view==='garage')renderGarage();
 }
 
 /* ---------- Deň ---------- */
@@ -4844,6 +4869,7 @@ function tabRoute(d,t){
   <div class="stat ${over?'warn':''}" style="cursor:pointer" title="Klik = naplánovať tankovanie na trase" onclick="fuelPlan()"><div class="v">${over?'⛽ '+Math.ceil(s.km/t.tankRange-1)+'×':'✓'}</div><div class="l">${over?'Tankovanie · naplánovať':'Na jednu nádrž'} (${t.tankRange} km)</div></div>
   ${(()=>{const m=motoScore(d);return m?`<div class="stat" title="Zákruty ${m.cs} · ${m.ws==null?'počasie nenačítané':'počasie '+m.ws} · dĺžka ${m.ls}"><div class="v"><span class="badge ${scoreCls(m.sc)}" style="font-size:17px">🏁 ${m.sc}</span></div><div class="l">Moto skóre dňa${m.ws==null?' (bez počasia)':''}</div></div>`:''})()}
  </div>
+ ${routeExtrasCard(d)}
  ${(d.track&&d.track.length>1)?trackCard(d):''}
  <div class="card"><h4>Body trasy <span class="muted small">(Š = štart, C = cieľ; body môžeš v mape potiahnuť)</span></h4>
  ${d.waypoints.length?(()=>{const tl=timeline(d);return `<div class="list">${d.waypoints.map((w,i)=>{const last=i===d.waypoints.length-1;return `<div class="item" style="flex-wrap:wrap"><span class="num">${i===0?'Š':(last?'C':i)}</span><input type="text" style="min-width:140px" value="${esc(w.name)}" onchange="day().waypoints[${i}].name=this.value;save()">
@@ -5198,6 +5224,415 @@ function printTrip(diary){const t=trip();const w=window.open('','_blank');if(!w)
  ${diary&&t.expenses.length?`<h2>Výdavky</h2><b>Spolu: ${t.expenses.reduce((a,e)=>a+(+e.amount||0),0).toFixed(2)} €</b>`:''}
  <script>setTimeout(()=>print(),${diary?1500:400})<\/script></body></html>`);w.document.close()}
 
+/* ================= ROZŠÍRENIA: radary, limity, skupina, garáž, krajiny, hlásenia, SOS, miesta, rozbor jazdy ================= */
+const XS=Object.assign({radar:true,radarDist:800,limits:true,lagKm:10,vib:true,haz:true,leanFlip:false},lsGet('xset',{}));
+function xsSet(k,v){XS[k]=v;lsSet('xset',XS)}
+const brg=(a,b)=>{const r=Math.PI/180,y=Math.sin((b[1]-a[1])*r)*Math.cos(b[0]*r),x=Math.cos(a[0]*r)*Math.sin(b[0]*r)-Math.sin(a[0]*r)*Math.cos(b[0]*r)*Math.cos((b[1]-a[1])*r);return (Math.atan2(y,x)/r+360)%360};
+const angD=(a,b)=>{const d=Math.abs(a-b)%360;return d>180?360-d:d};
+function segDist(p,a,b){const k=Math.cos(p[0]*Math.PI/180)*111.32,ax=(a[1]-p[1])*k,ay=(a[0]-p[0])*110.57,bx=(b[1]-p[1])*k,by=(b[0]-p[0])*110.57,dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy;let t=L2?-(ax*dx+ay*dy)/L2:0;t=Math.max(0,Math.min(1,t));const x=ax+t*dx,y=ay+t*dy;return Math.sqrt(x*x+y*y)}
+function vib(p){if(XS.vib&&navigator.vibrate)try{navigator.vibrate(p)}catch(e){}}
+const X={places:null,helpers:null,haz:null,hazT:0,pick:null,pickLL:null,plForm:null,plF:'',hForm:null,myLL:null};
+const XR={prev:null,prevT:0,prevH:null,head:null,tlen:0,km:0,lastIdx:null,secIn:{},said:new Set(),over:false};
+let L_ext=null,L_grp=null;
+function routeSig(d){const c=routeCoords(d);return c.length+'|'+(c[0]||'')+'|'+(c[c.length-1]||'')}
+function segProj(p,a,b){const k=Math.cos(p[0]*Math.PI/180)*111.32,ax=(a[1]-p[1])*k,ay=(a[0]-p[0])*110.57,bx=(b[1]-p[1])*k,by=(b[0]-p[0])*110.57,dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy;let t=L2?-(ax*dx+ay*dy)/L2:0;t=Math.max(0,Math.min(1,t));const x=ax+t*dx,y=ay+t*dy;return [Math.sqrt(x*x+y*y),t]}
+function rsGrid(rs){if(rs._g)return rs._g;const g={};const add=(p,k)=>{const key=Math.floor(p[0]/0.01)+'_'+Math.floor(p[1]/0.01);const a=g[key]||(g[key]=[]);if(a[a.length-1]!==k)a.push(k)};
+ for(let k=0;k<rs.R.length-1;k++){const A=rs.R[k],B=rs.R[k+1],n=Math.max(1,Math.ceil(hav(A,B)/0.4));for(let z=0;z<=n;z++)add([A[0]+(B[0]-A[0])*z/n,A[1]+(B[1]-A[1])*z/n],k)}
+ if(rs.R.length===1)add(rs.R[0],0);Object.defineProperty(rs,'_g',{value:g,enumerable:false});return g}
+function nearIdx(rs,ll,maxKm,pref){const g=rsGrid(rs);const a=Math.floor(ll[0]/0.01),b=Math.floor(ll[1]/0.01);let best=null,bd=maxKm||1e9,pb=null,pd=1e9;const seen=new Set();
+ for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)(g[(a+i)+'_'+(b+j)]||[]).forEach(k=>{if(seen.has(k))return;seen.add(k);const B=rs.R[k+1]||rs.R[k];const [dd,t]=segProj(ll,rs.R[k],B);const km=rs.cum[k]+t*((rs.cum[k+1]!=null?rs.cum[k+1]:rs.cum[k])-rs.cum[k]);const o={i:t>0.5&&rs.R[k+1]?k+1:k,s:k,d:dd,km};
+  if(dd<bd){bd=dd;best=o}if(pref!=null&&Math.abs(k-pref)<80&&dd<pd){pd=dd;pb=o}});
+ if(!best)return null;if(pb&&pd<bd+0.05)return pb;return best}
+/* ---------- rýchlostné limity z OSM ---------- */
+const ZL={rural:{sk:90,cz:90,at:100,de:100,pl:90,hu:90,si:90,hr:90,it:90,fr:80,ch:80,ro:90,rs:80,ba:80,me:80,bg:90,gr:90,es:90,pt:90,nl:80,be:70,dk:80,no:80,se:70,gb:96,lu:90,li:80},
+ motorway:{sk:130,cz:130,at:130,de:-1,pl:140,hu:130,si:130,hr:130,it:130,fr:130,ch:120,ro:130,rs:130,bg:140,gr:130,es:120,pt:120,nl:100,be:120,dk:130,no:110,se:110,gb:112},
+ trunk:{sk:90,cz:110,pl:120,hu:110,de:100,at:100,ro:100}};
+function parseMax(v){if(!v)return 0;v=String(v).trim().toLowerCase();if(v==='none')return -1;if(v==='walk')return 7;let m=v.match(/^(\d+)\s*(mph)?/);if(m)return m[2]?Math.round(+m[1]*1.609):+m[1];
+ m=v.match(/^([a-z]{2}):([a-z_]+)/);if(m){const cc=m[1],z=m[2];if(z==='urban')return 50;if(z==='living_street')return 20;if(z==='zone30')return 30;if(z==='rural'||z==='motorway'||z==='trunk'){const t=ZL[z];return t[cc]!=null?t[cc]:(z==='motorway'?130:90)}}
+ m=v.match(/zone:?(\d+)/);if(m)return +m[1];return 0}
+function segGrid(ways){const g={};ways.forEach(w=>{const t=w.tags||{},geo=w.geometry||[];const base=parseMax(t.maxspeed)||parseMax(t['maxspeed:type'])||parseMax(t['source:maxspeed']);const f=parseMax(t['maxspeed:forward'])||base,b=parseMax(t['maxspeed:backward'])||base;if(!f&&!b)return;
+ for(let i=1;i<geo.length;i++){const A=[geo[i-1].lat,geo[i-1].lon],B=[geo[i].lat,geo[i].lon];const s={a:A,b:B,h:brg(A,B),f,bk:b};const ks=new Set([Math.floor(A[0]/0.005)+'_'+Math.floor(A[1]/0.005),Math.floor(B[0]/0.005)+'_'+Math.floor(B[1]/0.005),Math.floor((A[0]+B[0])/0.01)+'_'+Math.floor((A[1]+B[1])/0.01)]);ks.forEach(k=>(g[k]=g[k]||[]).push(s))}});return g}
+function limFromGrid(g,ll,hd,maxKm){if(!g)return 0;const a=Math.floor(ll[0]/0.005),b=Math.floor(ll[1]/0.005);let best=null,bd=maxKm;
+ for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)(g[(a+i)+'_'+(b+j)]||[]).forEach(s=>{const dd=segDist(ll,s.a,s.b);if(dd>=bd)return;let v;if(hd==null)v=s.f||s.bk;else{const df=angD(hd,s.h);if(df<40)v=s.f;else if(df>140)v=s.bk;else return}if(!v)return;bd=dd;best=v});return best||0}
+const XRD={busy:null,prog:0,cc:null,ccp:''};let xrT=null;
+function renderRouteExtrasSoon(){clearTimeout(xrT);xrT=setTimeout(()=>{if(S.view==='day'&&S.dayTab==='route'){const a=document.activeElement;if(!a||!/INPUT|TEXTAREA|SELECT/.test(a.tagName))renderMain()}},250)}
+function roadOk(d){return d&&d.road&&d.road.sig===routeSig(d)?d.road:null}
+function limAt(R,i){const r=R.lim;let lo=0,hi=r.length-1,v=0;while(lo<=hi){const m=(lo+hi)>>1;if(r[m][0]<=i){v=r[m][1];lo=m+1}else hi=m-1}return v}
+async function loadRoadData(d,silent){if(!d||!d.route||routeCoords(d).length<2){if(!silent)toast('Deň nemá trasu');return}if(XRD.busy)return;
+ const rs=routeSample(d),sig=routeSig(d),tot=rs.cum[rs.cum.length-1];XRD.busy=d.id;XRD.prog=0;renderRouteExtrasSoon();if(!silent)toast('📸 Načítavam radary a limity z OpenStreetMap…',3000);
+ const lim=new Array(rs.R.length).fill(0),cams=[],secs=[];
+ try{const CH=60;for(let s=0;s<tot;s+=CH){const idx=[];for(let i=0;i<rs.R.length;i++)if(rs.cum[i]>=s-0.2&&rs.cum[i]<=s+CH+0.2)idx.push(i);if(idx.length<2)continue;
+   const pts=[];let last=-1e9;idx.forEach((i,k)=>{if(rs.cum[i]-last>=0.2||k===idx.length-1){pts.push(rs.R[i]);last=rs.cum[i]}});const P=pts.map(p=>p[0].toFixed(5)+','+p[1].toFixed(5)).join(',');
+   const q=`[out:json][timeout:120];node[highway=speed_camera](around:40,${P})->.c;.c out body;rel(bn.c)[type=enforcement]->.r1;rel[type=enforcement][enforcement~"average_speed|section"](around:40,${P})->.r2;(.r1;.r2;)->.r;.r out body;.r >;out skel qt;${XS.limits?`way[highway][~"^maxspeed(:forward|:backward)?$"~"."](around:14,${P});out tags geom qt;`:''}`;
+   const j=await overpass(q,125000);processRoad(j,rs,idx,lim,cams,secs);XRD.prog=Math.min(99,Math.round((s+CH)/tot*100));renderRouteExtrasSoon()}
+  for(let i=1;i<lim.length-1;i++)if(!lim[i]){let k=i;while(k<lim.length&&!lim[k])k++;if(k-i<=4&&lim[i-1]&&k<lim.length&&lim[k]===lim[i-1])for(let z=i;z<k;z++)lim[z]=lim[i-1];i=k}
+  const runs=[];lim.forEach((v,i)=>{if(!runs.length||runs[runs.length-1][1]!==v)runs.push([i,v])});
+  const uc=[];cams.sort((a,b)=>a.km-b.km).forEach(c=>{const p=uc[uc.length-1];if(p&&Math.abs(p.km-c.km)<0.04){if(!p.max&&c.max)p.max=c.max;return}uc.push(c)});
+  const known=lim.filter(v=>v).length;d.road={sig,lim:runs,cams:uc,secs,cov:Math.round(known/lim.length*100),t:Date.now()};save();
+  if(!silent)toast(`📸 ${uc.length} radarov, ${secs.length} úsekových meraní · limity pre ${d.road.cov} % trasy`,4500)}
+ catch(e){if(!silent)toast('⚠️ '+e.message,5000)}finally{XRD.busy=null;renderRouteExtrasSoon();if(S.view==='day'||S.view==='ride')drawExt()}}
+function processRoad(j,rs,idx,lim,cams,secs){const N={},ways=[],rels=[];(j.elements||[]).forEach(e=>{if(e.type==='node'){N[e.id]=[e.lat,e.lon];if(e.tags&&e.tags.highway==='speed_camera')cams.push({id:e.id,lat:+e.lat.toFixed(6),lng:+e.lon.toFixed(6),max:parseMax(e.tags.maxspeed),_t:e.tags})}else if(e.type==='way'&&e.geometry)ways.push(e);else if(e.type==='relation')rels.push(e)});
+ const kmOf=ll=>{const n=nearIdx(rs,ll,0.06);return n?n.km:null};
+ const relOf={};rels.forEach(r=>{const t=r.tags||{},mx=parseMax(t.maxspeed);const m=r.members||[];const from=m.find(x=>x.role==='from'&&N[x.ref]),to=m.find(x=>x.role==='to'&&N[x.ref]);
+  m.filter(x=>x.role==='device').forEach(x=>relOf[x.ref]={mx,from:from&&N[from.ref]});
+  if(/average|section/.test(t.enforcement||'')&&from&&to){const a=kmOf(N[from.ref]),b=kmOf(N[to.ref]);if(a!=null&&b!=null&&b>a+0.2)secs.push({id:r.id,a:+a.toFixed(3),b:+b.toFixed(3),max:mx})}});
+ for(let k=cams.length-1;k>=0;k--){const c=cams[k];if(c.km!=null)continue;const km=kmOf([c.lat,c.lng]);const ro=relOf[c.id];
+  if(km==null){cams.splice(k,1);continue}
+  if(ro&&ro.from){const fk=kmOf(ro.from);if(fk!=null&&fk>km+0.005){cams.splice(k,1);continue}}
+  const dir=c._t&&c._t.direction;if(dir&&/^\d+$/.test(dir)){const n=nearIdx(rs,[c.lat,c.lng],0.06);if(n){const hb=brg(rs.R[n.s],rs.R[n.s+1]||rs.R[n.s]);if(angD(hb,+dir)>110){cams.splice(k,1);continue}}}
+  c.km=+km.toFixed(3);if(!c.max&&ro)c.max=ro.mx;delete c._t}
+ if(ways.length){const g=segGrid(ways);idx.forEach(i=>{if(lim[i])return;const hd=brg(rs.R[Math.max(0,i-1)],rs.R[Math.min(rs.R.length-1,i+1)]);lim[i]=limFromGrid(g,rs.R[i],hd,0.022)})}}
+
+/* --- voľná jazda bez trasy: limity a radary v okolí --- */
+const XL={ll:null,t:0,busy:false,cams:[],g:null};
+async function liveRoad(ll){if(XL.busy||!navigator.onLine)return;if(XL.ll&&hav(XL.ll,ll)<1.2&&Date.now()-XL.t<900e3)return;if(XL.t&&Date.now()-XL.t<25e3)return;XL.busy=true;
+ try{const P=ll[0].toFixed(5)+','+ll[1].toFixed(5);const j=await overpass(`[out:json][timeout:25];node[highway=speed_camera](around:5000,${P});out body;${XS.limits?`way[highway][~"^maxspeed(:forward|:backward)?$"~"."](around:2000,${P});out tags geom qt;`:''}`,30000);
+  const ways=[];XL.cams=[];(j.elements||[]).forEach(e=>{if(e.type==='node'&&e.tags&&e.tags.highway==='speed_camera')XL.cams.push({id:e.id,lat:e.lat,lng:e.lon,max:parseMax(e.tags.maxspeed)});else if(e.type==='way')ways.push(e)});XL.g=segGrid(ways);XL.ll=ll;if(S.view==='ride')drawExt()}catch(e){}
+ XL.t=Date.now();XL.busy=false}
+
+/* ---------- veľké výstrahy na displeji ---------- */
+const XA={timed:null,html:''};
+function xal(){let e=$('#xAlert');if(!e){e=document.createElement('div');e.id='xAlert';e.className='xal';e.style.display='none';document.body.appendChild(e)}return e}
+function showXA(cls,html){const e=xal();if(!html){if(e.style.display!=='none'){e.style.display='none';XA.html=''}return}if(XA.html!==cls+html){e.className='xal '+cls;e.innerHTML=html;XA.html=cls+html}e.style.display='flex'}
+function timedXA(cls,html,sec){XA.timed={cls,html,until:Date.now()+(sec||15)*1000};showXA(cls,html)}
+function xDismiss(){XA.timed=null;showXA('','')}
+const dTxt=km=>km<1?Math.max(0,Math.round(km*1000/10)*10)+' m':km.toFixed(1).replace('.',',')+' km';
+
+/* ---------- spracovanie každej GPS polohy ---------- */
+function extOnPos(d,ll,p){const now=Date.now();const spd=p.coords.speed!=null&&p.coords.speed>=0?p.coords.speed:null;
+ let hd=(p.coords.heading!=null&&!isNaN(p.coords.heading)&&(spd||0)>1.5)?p.coords.heading:null;
+ if(!XR.prev){XR.prev=ll;XR.prevT=now}else if(hav(XR.prev,ll)>0.012){const b=brg(XR.prev,ll);if(hd==null)hd=b;
+  if(!XM.gyro&&XR.prevH!=null&&(spd||0)>3){const dt=(now-XR.prevT)/1000;if(dt>0&&dt<10){const dh=((b-XR.prevH+540)%360)-180;const w=-dh*Math.PI/180/dt;let th=Math.atan(spd*w/9.81)*180/Math.PI;if(XS.leanFlip)th=-th;XM.lean=th;if(Math.abs(th)>Math.abs(XM.maxSince))XM.maxSince=th}}
+  XR.prevH=b;XR.prevT=now;XR.prev=ll}
+ if(hd!=null)XR.head=hd;XM.v=spd||0;
+ if(d.track&&d.track.length>XR.tlen){if(XR.tlen>0){const a=d.track[XR.tlen-1],b=d.track[d.track.length-1];const k=hav(a,b);if(k<5)XR.km+=k}const last=d.track[d.track.length-1];if(XM.on||XM.maxSince)last[4]=Math.round(XM.maxSince);XM.maxSince=0;XR.tlen=d.track.length}
+ const sp=spd!=null?spd*3.6:null;
+ let rs=null,ni=null,cur=null;if(d.route&&routeCoords(d).length>1){rs=routeSample(d);ni=nearIdx(rs,ll,0.3,XR.lastIdx);if(ni){XR.lastIdx=ni.s;cur=ni.km}}
+ const R=cur!=null?roadOk(d):null;
+ if(cur==null||!R)liveRoad(ll);
+ // limit
+ let lim=0;if(R&&cur!=null)lim=limAt(R,ni.i);if(!lim&&XL.g)lim=limFromGrid(XL.g,ll,XR.head,0.03);
+ const lb=$('#rpLimBox'),le=$('#rpLim');if(lb&&le){if(XS.limits&&lim){lb.style.display='';le.textContent=lim<0?'∞':lim;le.title=lim<0?'bez obmedzenia':lim+' km/h'}else lb.style.display='none'}
+ const over=lim>0&&sp!=null&&sp>lim+3;document.body.classList.toggle('overspd',over);if(over&&!XR.over&&sp>lim+10)vib(250);XR.over=over;
+ const lnb=$('#rpLeanBox'),ln=$('#rpLean');if(lnb&&ln&&(XM.on||XM.lean)){lnb.style.display='';const a=Math.round(Math.abs(XM.lean));ln.textContent=a<3?'0°':(XM.lean>0?'◀ '+a+'°':a+'° ▶')}
+ // výstrahy
+ let alert=null;
+ if(XS.radar){let cam=null,dist=1e9;const ad=XS.radarDist/1000;
+  if(R&&cur!=null){for(const c of R.cams){const dk=c.km-cur;if(dk>-0.03&&dk<=ad&&dk<dist){dist=dk;cam=c}}}
+  else if(XL.cams.length&&XR.head!=null){for(const c of XL.cams){const dk=hav(ll,[c.lat,c.lng]);if(dk<=ad&&dk<dist&&(dk<0.05||angD(brg(ll,[c.lat,c.lng]),XR.head)<28)){dist=dk;cam=c}}}
+  if(cam){const k='c'+cam.id;if(!XR.said.has(k)){XR.said.add(k);vib([400,150,400]);if(VOICE.on)say('Radar'+(cam.max>0?', '+cam.max:''))}
+   alert=['radar'+(dist<0.3?' pulse':''),`<div class="xsign">${cam.max>0?cam.max:'📸'}</div><div><div class="xt">📸 RADAR</div><div class="xd">${dTxt(Math.max(0,dist))}</div>${cam.max>0&&sp!=null&&sp>cam.max+2?'<div class="xt" style="color:#ef4444">SPOMAĽ!</div>':''}</div>`]}
+  if(!alert&&R&&cur!=null){for(const s of R.secs){if(cur>=s.a&&cur<=s.b){const st=XR.secIn[s.id];if(!st){XR.secIn[s.id]={t:now,km:cur,full:cur-s.a<0.3};vib([300,100,300])}const S0=XR.secIn[s.id];const h=(now-S0.t)/3600e3;const avg=h>0.003?(cur-S0.km)/h:(sp||0);const bad=s.max>0&&avg>s.max;
+     alert=['radar'+(bad?' pulse':''),`<div class="xsign">${s.max>0?s.max:'⏱'}</div><div><div class="xt">⏱ ÚSEKOVÉ MERANIE</div><div class="xd" style="color:${bad?'#ef4444':'#22c55e'}">ø ${Math.round(avg)} km/h</div><div class="small">do konca ${dTxt(s.b-cur)}${S0.full?'':' · priemer od vstupu do apky'}</div></div>`];break}
+    if(cur<s.a&&s.a-cur<=ad){alert=['radar',`<div class="xsign">${s.max>0?s.max:'⏱'}</div><div><div class="xt">⏱ ÚSEKOVÉ MERANIE</div><div class="xd">o ${dTxt(s.a-cur)}</div><div class="small">dĺžka ${dTxt(s.b-s.a)}</div></div>`];if(!XR.said.has('s'+s.id)){XR.said.add('s'+s.id);vib([400,150,400])}break}}}}
+ if(!alert&&XS.haz&&X.haz){let hz=null,dist=1e9;for(const h of X.haz){if(h.exp<now)continue;const hl=[h.lat,h.lng];let dk;
+   if(rs&&cur!=null){const n=nearIdx(rs,hl,0.08);if(!n)continue;dk=n.km-cur;if(dk<-0.05||dk>1.5)continue}else{dk=hav(ll,hl);if(dk>1||(dk>0.06&&(XR.head==null||angD(brg(ll,hl),XR.head)>35)))continue}
+   if(dk<dist){dist=dk;hz=h}}
+  if(hz){const T=HAZ[hz.type]||HAZ.other;if(!XR.said.has('h'+hz.id)){XR.said.add('h'+hz.id);vib([200,100,200,100,200]);if(VOICE.on)say('Pozor, '+T[1])}
+   alert=['haz',`<div style="font-size:60px;line-height:1">${T[0]}</div><div><div class="xt">${esc(T[1])}</div><div class="xd">${dTxt(Math.max(0,dist))}</div><div class="small muted">nahlásil ${esc(hz.name||'?')} · ${ago(tsMs(hz.created))}</div><div class="btnrow" style="margin-top:6px"><button class="sm" onclick="hazVote('${esc(hz.id)}',1)">👍 Je tam</button><button class="sm" onclick="hazVote('${esc(hz.id)}',0)">👋 Už nie</button></div></div>`]}}
+ // hranice
+ if(d.ccs&&d.ccs.sig===routeSig(d)&&cur!=null)d.ccs.list.forEach((c,i)=>{if(i>0&&cur>=c.km-0.4&&cur<c.km+3&&!XR.said.has('b'+i)){XR.said.add('b'+i);const I=CCINFO[c.cc]||{};vib([200,100,200]);timedXA('brd',`<div style="font-size:64px;line-height:1">${flag(c.cc)}</div><div style="max-width:520px"><div class="xt">Vstupuješ: ${esc(I.n||c.cc.toUpperCase())}</div><div class="small" style="margin-top:4px">${esc((I.v||'').split('.')[0])}</div><button class="sm" style="margin-top:6px" onclick="xDismiss()">OK</button></div>`,20)}});
+ grpTick(d,ll,sp,cur);
+ if(alert)showXA(alert[0],alert[1]);else if(XA.timed&&XA.timed.until>now)showXA(XA.timed.cls,XA.timed.html);else{XA.timed=null;showXA('','')}
+ if(X.haz&&now-X.hazT>300e3)hazLoad()}
+
+/* ---------- náklon (gyroskop) ---------- */
+const XM={on:false,gyro:false,lean:0,maxSince:0,v:0,ios:/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)};
+function onMotion(e){const g=e.accelerationIncludingGravity,r=e.rotationRate;if(!g||!r||g.x==null||r.alpha==null)return;const s=XM.ios?-1:1,gx=g.x*s,gy=g.y*s,gz=g.z*s,n=Math.hypot(gx,gy,gz)||1;
+ const w=((r.beta||0)*gx+(r.gamma||0)*gy+(r.alpha||0)*gz)/n*Math.PI/180;XM.gyro=true;let th=0;if(XM.v>3)th=Math.asin(Math.max(-1,Math.min(1,XM.v*w/9.81)))*180/Math.PI;if(XS.leanFlip)th=-th;
+ XM.lean=XM.lean*0.85+th*0.15;if(Math.abs(XM.lean)>Math.abs(XM.maxSince))XM.maxSince=XM.lean}
+function motionStart(){if(XM.on)return;const go=()=>{window.addEventListener('devicemotion',onMotion);XM.on=true};
+ try{if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function')DeviceMotionEvent.requestPermission().then(s=>{if(s==='granted')go()}).catch(()=>{});else if('DeviceMotionEvent' in window)go()}catch(e){}}
+function motionStop(){window.removeEventListener('devicemotion',onMotion);XM.on=false;XM.gyro=false;XM.lean=0}
+
+/* ---------- štart / koniec jazdy ---------- */
+function extRideStart(d){motionStart();XR.prev=null;XR.prevH=null;XR.lastIdx=null;XR.secIn={};XR.said=new Set();XR.tlen=d.track?d.track.length:0;XA.timed=null;
+ const b=garBike();if(b){const due=b.items.map(it=>[it,garStat(b,it)]).filter(x=>x[1].lvl);if(due.length)setTimeout(()=>toast('🔧 '+b.name+': '+due.slice(0,3).map(([it,s])=>it.name+(s.lvl===2?' – po termíne':' – '+garLeftTxt(s))).join(' · '),7000),1500)}
+ if(d.route&&routeCoords(d).length>1&&!roadOk(d)&&(XS.radar||XS.limits))loadRoadData(d,true).then(()=>{if(!(d.ccs&&d.ccs.sig===routeSig(d)))loadCountries(d,true)});
+ else if(d.route&&!(d.ccs&&d.ccs.sig===routeSig(d)))loadCountries(d,true);
+ if(XS.haz)hazLoad();if(G.code)grpListen()}
+function extRideEnd(){motionStop();showXA('','');document.body.classList.remove('overspd');grpUnlisten()}
+function garFlush(){if(XR.km>0.05){const b=garBike();if(b){b.odo=Math.round((b.odo+XR.km)*10)/10;garSave();toast(`🔧 ${b.name}: +${XR.km.toFixed(1).replace('.',',')} km na tachometri (${Math.round(b.odo).toLocaleString('sk-SK')} km)`,4500)}}XR.km=0}
+
+/* ---------- nastavenia ---------- */
+function xSettings(){xModal(`<h4>⚙️ Upozornenia počas jazdy</h4>
+ <label class="chk"><input type="checkbox" ${XS.radar?'checked':''} onchange="xsSet('radar',this.checked)"> 📸 Radary a úsekové merania (veľká výstraha na displeji)</label>
+ <label>Upozorniť vopred</label><select onchange="xsSet('radarDist',+this.value)">${[400,600,800,1000,1500].map(v=>`<option value="${v}" ${XS.radarDist==v?'selected':''}>${v} m</option>`).join('')}</select>
+ <label class="chk"><input type="checkbox" ${XS.limits?'checked':''} onchange="xsSet('limits',this.checked)"> 🚦 Rýchlostný limit na displeji (rýchlosť sčervenie pri prekročení)</label>
+ <label class="chk"><input type="checkbox" ${XS.haz?'checked':''} onchange="xsSet('haz',this.checked)"> ⚠️ Hlásenia motorkárov (olej, štrk, polícia…)</label>
+ <label class="chk"><input type="checkbox" ${XS.vib?'checked':''} onchange="xsSet('vib',this.checked)"> 📳 Vibrovať pri výstrahe (Android)</label>
+ <label>👥 Výstraha pri zaostaní člena skupiny o viac ako</label><select onchange="xsSet('lagKm',+this.value)">${[3,5,8,10,15,20,30].map(v=>`<option value="${v}" ${XS.lagKm==v?'selected':''}>${v} km</option>`).join('')}</select>
+ <label class="chk"><input type="checkbox" ${XS.leanFlip?'checked':''} onchange="xsSet('leanFlip',this.checked)"> ↔ Prehodiť ľavý/pravý náklon (ak ukazuje opačne)</label>
+ <div class="small muted" style="margin-top:8px">Radary sú z OpenStreetMap (pevné a úsekové), zapnuté vo všetkých krajinách. Mobilné radary appka nepozná.</div>
+ <div class="btnrow"><button class="primary" onclick="xModalClose()">Hotovo</button></div>`)}
+function xModal(html){let b=$('#xModal');if(!b){b=document.createElement('div');b.id='xModal';b.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:3600;display:flex;align-items:center;justify-content:center';b.onclick=e=>{if(e.target===b)xModalClose()};document.body.appendChild(b)}b.innerHTML=`<div class="card" style="max-width:500px;width:94%;max-height:88vh;overflow:auto">${html}</div>`}
+function xModalClose(){const b=$('#xModal');if(b)b.remove()}
+
+/* ---------- Firebase bez otvárania komunity ---------- */
+async function ensureFB(){if(C.ready==='ok')return true;if(C.ready==='loading'){for(let i=0;i<60&&C.ready==='loading';i++)await new Promise(r=>setTimeout(r,200));return C.ready==='ok'}
+ C.ready='loading';try{const ok=await CDB().init();C.ready=ok?'ok':'nocfg'}catch(e){C.ready='error';C.err=e.message}C.user=CDB().me&&CDB().me();
+ if(C.ready==='ok'&&!C.user)for(let i=0;i<15&&!C.user;i++){await new Promise(r=>setTimeout(r,150));C.user=CDB().me()}return C.ready==='ok'}
+async function xSignIn(after){try{if(!(await ensureFB())){toast('Komunita nie je dostupná');return}await CDB().signIn();for(let i=0;i<30&&!C.user;i++){await new Promise(r=>setTimeout(r,200));C.user=CDB().me()}if(after)after()}catch(e){toast('⚠️ Prihlásenie: '+(e.message||e),5000)}}
+
+/* ================= 👥 SKUPINOVÁ JAZDA ================= */
+const G={code:lsGet('grp',null),unsub:null,mem:{},lastW:0,lastLL:null,alerted:{},mk:{}};
+const grpCodeGen=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<6;i++)s+=a[Math.floor(Math.random()*a.length)];return s};
+async function grpDialog(){await ensureFB();const u=C.user;const mem=Object.values(G.mem);
+ if(C.ready!=='ok'){xModal(`<h4>👥 Skupinová jazda</h4><div class="small">Skupina potrebuje pripojenie ku komunite (internet).</div><div class="btnrow"><button onclick="xModalClose()">Zavrieť</button></div>`);return}
+ if(!u){xModal(`<h4>👥 Skupinová jazda</h4><div class="small">Kamaráti uvidia tvoju polohu na mape a appka ti veľkou výstrahou ohlási, keď niekto zaostane o viac ako ${XS.lagKm} km. Na to sa treba prihlásiť (Google).</div><div class="btnrow"><button class="primary" onclick="xSignIn(grpDialog)">Prihlásiť sa cez Google</button><button onclick="xModalClose()">Zavrieť</button></div>`);return}
+ if(!G.code){xModal(`<h4>👥 Skupinová jazda</h4><div class="small">Jeden vytvorí skupinu a pošle kód ostatným. Každý si ho zadá v režime Jazda. Poloha sa posiela len počas jazdy, cca každých 15 s.</div>
+  <div class="btnrow"><button class="primary" onclick="grpJoin(grpCodeGen())">＋ Vytvoriť novú skupinu</button></div>
+  <label>Alebo zadaj kód od kamaráta</label><div style="display:flex;gap:6px"><input id="grpIn" maxlength="6" style="text-transform:uppercase;font-size:20px;letter-spacing:3px" placeholder="ABC123"><button class="primary" onclick="grpJoin($('#grpIn').value)">Pripojiť</button></div>
+  <label>Výstraha pri zaostaní o</label><select onchange="xsSet('lagKm',+this.value)">${[3,5,8,10,15,20,30].map(v=>`<option value="${v}" ${XS.lagKm==v?'selected':''}>${v} km</option>`).join('')}</select>
+  <div class="btnrow"><button onclick="xModalClose()">Zavrieť</button></div>`);return}
+ const link=location.origin+location.pathname+'#grp='+G.code;
+ xModal(`<h4>👥 Skupina <span style="font-size:26px;letter-spacing:4px;color:var(--acc2)">${esc(G.code)}</span></h4>
+  <div class="btnrow"><button class="primary" onclick="shareText('🏍️ Pridaj sa k našej skupinovej jazde v Moto Výlet – kód ${esc(G.code)}\\n${esc(link)}','👥 Pozvať do skupiny')">📤 Pozvať kamarátov</button></div>
+  <div class="list" style="margin-top:8px">${mem.length?mem.map(m=>{const a=(Date.now()-m.t)/60000;return `<div class="item">${avatar(m.uid,m.name,26)} <b>${esc(m.name)}</b><span class="grow"></span><span class="small ${a>3?'muted':''}">${grpLagTxt(m)} · ${a<1?'teraz':Math.round(a)+' min'}</span></div>`}).join(''):'<div class="small muted">Zatiaľ nikto ďalší. Pošli kód kamarátom.</div>'}</div>
+  <label>Výstraha pri zaostaní o</label><select onchange="xsSet('lagKm',+this.value)">${[3,5,8,10,15,20,30].map(v=>`<option value="${v}" ${XS.lagKm==v?'selected':''}>${v} km</option>`).join('')}</select>
+  <div class="btnrow"><button class="danger" onclick="grpLeave()">Opustiť skupinu</button><button onclick="xModalClose()">Zavrieť</button></div>`)}
+function grpJoin(code){code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4){toast('Zadaj kód skupiny');return}G.code=code;lsSet('grp',code);G.mem={};G.lastW=0;grpListen();toast('👥 Si v skupine '+code);grpDialog();if(S.view==='ride')renderRideHead()}
+async function grpLeave(){const id=G.code+'_'+(C.user&&C.user.uid);grpUnlisten();try{if(C.user)await CDB().del('ridepos',id)}catch(e){}G.code=null;lsSet('grp',null);G.mem={};xModalClose();if(S.view==='ride')renderRideHead();toast('Skupinu si opustil')}
+async function grpListen(){if(!G.code||G.unsub)return;if(!(await ensureFB())||!C.user)return;
+ G.unsub=CDB().listen('ridepos',{where:['rideId',G.code]},list=>{G.mem={};list.forEach(x=>{if(x.uid!==C.user.uid)G.mem[x.uid]=x});grpDraw()},e=>toast('⚠️ Skupina: '+e.message,5000))}
+function grpUnlisten(){if(G.unsub){try{G.unsub()}catch(e){}G.unsub=null}if(L_grp)L_grp.clearLayers();G.mk={}}
+function grpLagTxt(m){const me=G.me;if(!me)return '';let km,how;if(me.km!=null&&m.km!=null&&me.rsig===m.rsig){km=me.km-m.km;how=1}else km=hav([me.lat,me.lng],[m.lat,m.lng]);
+ return how?(Math.abs(km)<0.3?'pri tebe':km>0?Math.round(km)+' km za tebou':Math.round(-km)+' km pred tebou'):Math.round(km)+' km vzdušne'}
+function grpTick(d,ll,sp,cur){if(!G.code||!C.user)return;const now=Date.now();G.me={lat:ll[0],lng:ll[1],km:cur,rsig:routeSig(d)};
+ if(now-G.lastW>15000||(G.lastLL&&hav(G.lastLL,ll)>0.5)){G.lastW=now;G.lastLL=ll;CDB().set('ridepos',G.code+'_'+C.user.uid,{rideId:G.code,uid:C.user.uid,name:myName().slice(0,40),lat:+ll[0].toFixed(5),lng:+ll[1].toFixed(5),spd:sp!=null?Math.round(sp):null,km:cur!=null?+cur.toFixed(2):null,rsig:G.me.rsig,t:now}).catch(()=>{})}
+ Object.values(G.mem).forEach(m=>{if(now-m.t>180e3)return;let lag,same=m.km!=null&&cur!=null&&m.rsig===G.me.rsig;lag=same?cur-m.km:hav(ll,[m.lat,m.lng]);
+  if(Math.abs(lag)>XS.lagKm){if(!G.alerted[m.uid]||now-G.alerted[m.uid]>300e3){G.alerted[m.uid]=now;vib([600,200,600]);
+    const t=same?(lag>0?`${esc(m.name)} zaostáva`:`Zaostávaš za: ${esc(m.name)}`):`${esc(m.name)} je ďaleko`;
+    timedXA('grp',`<div style="font-size:60px;line-height:1">👥</div><div><div class="xt">${t}</div><div class="xd">${Math.round(Math.abs(lag))} km</div><div class="small muted">${m.spd!=null?'rýchlosť '+m.spd+' km/h · ':''}poloha pred ${Math.max(0,Math.round((now-m.t)/1000))} s</div><button class="sm" style="margin-top:6px" onclick="xDismiss()">OK</button></div>`,25)}}
+  else if(Math.abs(lag)<XS.lagKm*0.6)delete G.alerted[m.uid]})}
+function grpDraw(){if(!map)return;if(!L_grp)L_grp=L.layerGroup().addTo(map);const now=Date.now();const seen=new Set();
+ Object.values(G.mem).forEach(m=>{seen.add(m.uid);const old=now-m.t>180e3;const html=`<div class="grpic${old?' old':''}">${esc(String(m.name||'?').trim().charAt(0).toUpperCase())}<span>${esc(String(m.name||'').split(' ')[0].slice(0,10))}</span></div>`;
+  if(G.mk[m.uid]){G.mk[m.uid].setLatLng([m.lat,m.lng]);G.mk[m.uid].setIcon(L.divIcon({className:'',html,iconSize:[30,30],iconAnchor:[15,15]}))}
+  else G.mk[m.uid]=L.marker([m.lat,m.lng],{icon:L.divIcon({className:'',html,iconSize:[30,30],iconAnchor:[15,15]})}).bindTooltip(()=>esc(m.name)+' · '+grpLagTxt(m)).addTo(L_grp)});
+ Object.keys(G.mk).forEach(k=>{if(!seen.has(k)){L_grp.removeLayer(G.mk[k]);delete G.mk[k]}})}
+
+/* ================= ⚠️ HLÁSENIA NA CESTE ================= */
+const HAZ={police:['👮','Polícia / kontrola',2],accident:['💥','Nehoda',2],oil:['🛢️','Olej na ceste',6],gravel:['🪨','Štrk / piesok',24],pothole:['🕳️','Výtlk / zlá cesta',144],closure:['🚧','Uzávierka / práce',24],animal:['🦌','Zver na ceste',2],slippery:['❄️','Šmykľavo / poľadovica',6],other:['⚠️','Iné nebezpečenstvo',6]};
+async function hazLoad(){X.hazT=Date.now();try{if(!(await ensureFB()))return;const l=await CDB().list('hazards',{where:['exp','>',Date.now()],limit:600});X.haz=l.filter(h=>Object.keys(h.gone||{}).length<3);if(S.view==='day'||S.view==='ride')drawExt()}catch(e){console.warn('haz',e)}}
+async function hazDialog(){xModal(`<h4>⚠️ Nahlásiť na mieste, kde si</h4><div class="hazgrid">${Object.entries(HAZ).map(([k,v])=>`<button onclick="hazReport('${k}')"><span style="font-size:34px">${v[0]}</span><br>${v[1]}</button>`).join('')}</div>
+ <div class="small muted" style="margin-top:6px">Ostatní motorkári uvidia výstrahu na displeji, keď sa priblížia. Hlásenie po čase samo zmizne (polícia 2 h, olej 6 h, štrk 24 h…).</div><div class="btnrow"><button onclick="xModalClose()">Zrušiť</button></div>`)}
+async function hazReport(type){const T=HAZ[type];if(!T)return;const pos=RIDE.pos&&Date.now()-RIDE.pos.t<60000?RIDE.pos.ll:null;
+ if(!pos){toast('Čakám na GPS polohu…');return}
+ if(!(await ensureFB())){toast('Komunita nie je dostupná');return}
+ if(!C.user){xModal(`<h4>⚠️ Hlásenie</h4><div class="small">Na hlásenie sa treba prihlásiť (aby sa dali odstrániť falošné hlásenia).</div><div class="btnrow"><button class="primary" onclick="xSignIn(()=>hazReport('${type}'))">Prihlásiť sa cez Google</button><button onclick="xModalClose()">Zrušiť</button></div>`);return}
+ const h={type,lat:+pos[0].toFixed(5),lng:+pos[1].toFixed(5),uid:C.user.uid,name:myName().slice(0,40),exp:Date.now()+T[2]*3600e3,up:{},gone:{}};
+ try{const id=await CDB().add('hazards',h);X.haz=X.haz||[];X.haz.push({id,...h,created:Date.now()});XR.said.add('h'+id);xModalClose();toast(T[0]+' Nahlásené – ďakujeme!');drawExt()}catch(e){toast('⚠️ '+e.message,5000)}}
+async function hazVote(id,ok){const h=(X.haz||[]).find(x=>x.id===id);if(!h)return;if(!(await ensureFB()))return;if(!C.user){xSignIn(()=>hazVote(id,ok));return}const T=HAZ[h.type]||HAZ.other;
+ try{if(ok){const exp=Date.now()+T[2]*3600e3;await CDB().update('hazards',id,{['up.'+C.user.uid]:1,exp});h.up=Object.assign({},h.up,{[C.user.uid]:1});h.exp=exp;toast('👍 Potvrdené, ďakujeme')}
+  else{if(h.uid===C.user.uid){await CDB().del('hazards',id);X.haz=X.haz.filter(x=>x.id!==id)}else{const g=Object.keys(h.gone||{}).length+1;const exp=g>=2?Date.now():h.exp;await CDB().update('hazards',id,{['gone.'+C.user.uid]:1,exp});h.gone=Object.assign({},h.gone,{[C.user.uid]:1});h.exp=exp;if(g>=2)X.haz=X.haz.filter(x=>x.id!==id)}toast('👋 Ďakujeme, hlásenie sa odstráni')}
+  showXA('','');drawExt()}catch(e){toast('⚠️ '+e.message,5000)}}
+function hazPopup(h){const T=HAZ[h.type]||HAZ.other;return `<div class="pop"><b>${T[0]} ${esc(T[1])}</b><br><span style="font-size:12px">${esc(h.name||'?')} · ${ago(tsMs(h.created))} · 👍 ${Object.keys(h.up||{}).length}</span><br><button onclick="hazVote('${esc(h.id)}',1)">👍 Je tam</button><button onclick="hazVote('${esc(h.id)}',0)">👋 Už nie</button></div>`}
+
+/* ================= kreslenie do mapy ================= */
+const camIcon=m=>L.divIcon({className:'',html:`<div class="camic">${m>0?m:'📸'}</div>`,iconSize:[26,26],iconAnchor:[13,13]});
+function drawMap(fit){drawMap0(fit);try{drawExt(fit)}catch(e){console.warn('drawExt',e)}}
+function drawExt(fit){if(!map)return;if(!L_ext)L_ext=L.layerGroup().addTo(map);L_ext.clearLayers();if(RP.on&&(S.view!=='day'||RP.dayId!==S.dayId))replayStop();
+ if(S.view==='community'){const b=[];
+  if(C.tab==='places'&&X.places){plFiltered().forEach(p=>{const T=PLT[p.type]||PLT.other;L.marker([p.lat,p.lng],{icon:emIcon(T[0])}).bindPopup(()=>plPopup(p)).addTo(L_ext);b.push([p.lat,p.lng])})}
+  if(C.tab==='sos'&&X.helpers){X.helpers.forEach(h=>{if(!isFinite(h.lat))return;L.marker([h.lat,h.lng],{icon:emIcon('🤝')}).bindPopup(`<div class="pop"><b>🤝 ${esc(h.name)}</b><br>${(h.offers||[]).map(o=>(SOSO[o]||[''])[0]).join(' ')}<br>${h.phone?`<a href="tel:${esc(h.phone.replace(/[^+\d]/g,''))}">☎ ${esc(h.phone)}</a>`:''}</div>`).addTo(L_ext);b.push([h.lat,h.lng])});if(X.myLL)L.circleMarker(X.myLL,{radius:9,color:'#fff',weight:3,fillColor:'#3ea6ff',fillOpacity:1}).addTo(L_ext)}
+  if(X.pickLL)L.marker(X.pickLL,{icon:emIcon('📍')}).addTo(L_ext);
+  if(fit&&b.length&&!X.pickLL){if(b.length===1)map.setView(b[0],12);else map.fitBounds(b,{padding:[30,30],maxZoom:13})}return}
+ if(S.view!=='day'&&S.view!=='ride')return;const d=day();if(!d)return;const R=roadOk(d);
+ if(R){const rs=routeSample(d);R.cams.forEach(c=>L.marker([c.lat,c.lng],{icon:camIcon(c.max)}).bindTooltip('📸 Radar'+(c.max>0?' '+c.max+' km/h':'')+' · km '+c.km.toFixed(1)).addTo(L_ext));
+  R.secs.forEach(s=>{const pts=rs.R.filter((p,i)=>rs.cum[i]>=s.a&&rs.cum[i]<=s.b);if(pts.length>1)L.polyline(pts,{color:'#ef4444',weight:10,opacity:.35}).bindTooltip('⏱ Úsekové meranie'+(s.max>0?' '+s.max+' km/h':'')+' · '+(s.b-s.a).toFixed(1)+' km').addTo(L_ext)})}
+ else if(S.view==='ride')XL.cams.forEach(c=>L.marker([c.lat,c.lng],{icon:camIcon(c.max)}).addTo(L_ext));
+ if(XS.haz&&X.haz)X.haz.filter(h=>h.exp>Date.now()).forEach(h=>L.marker([h.lat,h.lng],{icon:emIcon((HAZ[h.type]||HAZ.other)[0])}).bindPopup(()=>hazPopup(h)).addTo(L_ext));
+ if(S.view==='ride'&&G.code)grpDraw()}
+
+/* ================= 🛂 KRAJINY, ZNÁMKY, MÝTO ================= */
+const CCINFO={
+ sk:{n:'Slovensko',v:'Diaľničná známka: NIE – motocykle sú od nej oslobodené.',t:''},
+ cz:{n:'Česko',v:'Dálniční známka: NIE – motocykle sú oslobodené.',t:''},
+ at:{n:'Rakúsko',v:'Diaľničná známka: ÁNO – digitálna pre motocykle: 1 deň 3,80 € · 10 dní 5,10 € · 2 mesiace 12,80 € · rok 42,70 €. Viazaná na ŠPZ (asfinag.at, app, čerpačky). Kúpená online platí až od 18. dňa – na čerpačke či v automate hneď.',t:'Extra mýto aj pre motorky: Grossglockner, Timmelsjoch, Silvretta, Nockalmstraße, Kaunertal a tunely/úseky A9, A10, A11 Karawanken, A13 Brenner.',u:'https://www.asfinag.at'},
+ ch:{n:'Švajčiarsko',v:'Diaľničná známka: ÁNO – len ročná CHF 40 (e-vignette na via.admin.ch alebo nálepka). Motorka potrebuje vlastnú. Platí od 1. 12. do 31. 1. nasledujúceho roka.',t:'Tunel Veľký Sv. Bernard je platený. Prísne pokuty za rýchlosť.',u:'https://via.admin.ch'},
+ si:{n:'Slovinsko',v:'Diaľničná známka: ÁNO – e-vinjeta pre motocykle: 7 dní 8 € · ročná 58,70 € (aj polročná). Len elektronicky, viazaná na ŠPZ.',t:'Tunel Karavanke má samostatné mýto.',u:'https://evinjeta.dars.si'},
+ hu:{n:'Maďarsko',v:'Diaľničná známka: ÁNO – e-matrica kategória D1M (motocykel): 10 dní 3 450 Ft, ďalej mesačná, ročná a župné. Viazaná na ŠPZ.',t:'',u:'https://nemzetiutdij.hu'},
+ de:{n:'Nemecko',v:'Diaľničná známka: NIE – pre osobné autá ani motorky neexistuje.',t:'Environmentálne zóny (Umweltzone) sa na motocykle nevzťahujú.'},
+ pl:{n:'Poľsko',v:'Diaľničná známka: NIE.',t:'Mýto na súkromných úsekoch A1 (Gdańsk–Toruń), A2 (Konin–Świecko), A4 (Katowice–Kraków) – motorky lacnejšie; platba na bránach alebo aplikáciou.'},
+ hr:{n:'Chorvátsko',v:'Diaľničná známka: NIE – platí sa úsekové mýto (motorky kat. IA, lacnejšie ako auto).',t:'Spôsob platby (mýtnice / elektronické mýto) si over pred cestou na hac.hr.',u:'https://www.hac.hr'},
+ it:{n:'Taliansko',v:'Diaľničná známka: NIE – mýto na autostrádach podľa úseku (mýtnice, karta).',t:'Pozor na ZTL zóny v mestách (kamery, pokuty). Niektoré sedlá majú sezónne uzávierky.'},
+ fr:{n:'Francúzsko',v:'Diaľničná známka: NIE – péage podľa úseku, motorky trieda 5 (lacnejšie ako auto).',t:'Úseky bez búdok (free-flow, napr. A79, A13/A14) treba zaplatiť online do 72 h. Povinné reflexné prvky na prilbe a rukavice.'},
+ ro:{n:'Rumunsko',v:'Rovinieta: NIE – motocykle ju nepotrebujú.',t:'Mýto: most Fetești–Cernavodă (A2) a dunajské mosty. Transfăgărășan býva otvorený cca júl–október.'},
+ bg:{n:'Bulharsko',v:'E-vinetka: NIE – motocykle sú oslobodené.',t:'Mýto na dunajských mostoch Ruse–Giurgiu a Vidin–Calafat.'},
+ rs:{n:'Srbsko',v:'Diaľničná známka: NIE – mýto na mýtniciach (motorky kat. IA).',t:'Platba v dinároch, eurách alebo kartou. Zelená karta poistenia odporúčaná.'},
+ ba:{n:'Bosna a Hercegovina',v:'Diaľničná známka: NIE – mýto na diaľnici A1 (mýtnice).',t:'Potrebná zelená karta (poistenie).'},
+ me:{n:'Čierna Hora',v:'Diaľničná známka: NIE.',t:'Mýto: tunel Sozina a diaľnica Smokovac–Mateševo.'},
+ mk:{n:'Severné Macedónsko',v:'Diaľničná známka: NIE – mýto na mýtniciach.',t:''},
+ al:{n:'Albánsko',v:'Diaľničná známka: NIE.',t:'Mýto na diaľnici Milot–Morinë (tunel Kalimash).'},
+ gr:{n:'Grécko',v:'Diaľničná známka: NIE – mýto na mýtniciach (motorky lacnejšie).',t:''},
+ es:{n:'Španielsko',v:'Diaľničná známka: NIE – väčšina diaľnic je bez mýta, zvyšné AP úseky majú mýtnice.',t:''},
+ pt:{n:'Portugalsko',v:'Diaľničná známka: NIE – mýto; na úsekoch len s elektronickými portálmi treba vopred registrovať ŠPZ (EasyToll / TollCard).',t:''},
+ li:{n:'Lichtenštajnsko',v:'Diaľničná známka: NIE.',t:''},lu:{n:'Luxembursko',v:'Diaľničná známka: NIE.',t:''},nl:{n:'Holandsko',v:'Diaľničná známka: NIE.',t:''},be:{n:'Belgicko',v:'Diaľničná známka: NIE.',t:'Tunel Liefkenshoek je platený.'},
+ dk:{n:'Dánsko',v:'Diaľničná známka: NIE.',t:'Platené mosty Storebælt a Øresund (motorky lacnejšie).'},no:{n:'Nórsko',v:'Diaľničná známka: NIE – motocykle sú na mýtnych cestách väčšinou oslobodené.',t:'Trajekty sú platené.'},se:{n:'Švédsko',v:'Diaľničná známka: NIE.',t:'Øresundský most do Dánska je platený.'},
+ ua:{n:'Ukrajina',v:'Diaľničná známka: NIE.',t:''},lt:{n:'Litva',v:'Diaľničná známka: NIE pre motorky.',t:''},lv:{n:'Lotyšsko',v:'Diaľničná známka: NIE pre motorky.',t:''},ee:{n:'Estónsko',v:'Diaľničná známka: NIE.',t:''},
+ tr:{n:'Turecko',v:'Elektronické mýto HGS na diaľniciach a mostoch.',t:''},xk:{n:'Kosovo',v:'Diaľničná známka: NIE.',t:'Potrebné hraničné poistenie.'},md:{n:'Moldavsko',v:'Vinieta: over pred cestou.',t:''}};
+const CCC={};let ccLastT=0;
+async function ccAt(ll){const k=ll[0].toFixed(2)+','+ll[1].toFixed(2);if(CCC[k]!=null)return CCC[k];const w=ccLastT+1100-Date.now();if(w>0)await new Promise(r=>setTimeout(r,w));ccLastT=Date.now();
+ try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${ll[0].toFixed(5)}&lon=${ll[1].toFixed(5)}&zoom=3&accept-language=sk`);const j=await r.json();const cc=((j.address||{}).country_code||'').toLowerCase();CCC[k]=cc;return cc}catch(e){return ''}}
+async function loadCountries(d,silent){if(!d||!d.route||routeCoords(d).length<2)return;if(XRD.cc)return;XRD.cc=d.id;XRD.ccp='';renderRouteExtrasSoon();
+ try{const rs=routeSample(d),tot=rs.cum[rs.cum.length-1],n=rs.R.length;const step=Math.max(12,Math.min(45,tot/14));const idx=[];let nx=0;for(let i=0;i<n;i++)if(rs.cum[i]>=nx){idx.push(i);nx+=step}if(idx[idx.length-1]!==n-1)idx.push(n-1);
+  const cc=[];for(let k=0;k<idx.length;k++){cc.push(await ccAt(rs.R[idx[k]]));XRD.ccp=Math.round(k/idx.length*100)+' %';renderRouteExtrasSoon()}
+  for(let k=1;k<cc.length;k++)if(!cc[k])cc[k]=cc[k-1];for(let k=cc.length-2;k>=0;k--)if(!cc[k])cc[k]=cc[k+1];
+  const list=[{cc:cc[0],km:0}];
+  for(let k=1;k<idx.length;k++){if(cc[k]===cc[k-1])continue;let lo=idx[k-1],hi=idx[k];const cl=cc[k-1];while(rs.cum[hi]-rs.cum[lo]>2){const m=(lo+hi)>>1;const c=await ccAt(rs.R[m]);if(!c||c===cl)lo=m;else hi=m}list.push({cc:cc[k],km:+rs.cum[hi].toFixed(1)})}
+  d.ccs={sig:routeSig(d),list};save();if(!silent&&list.length>1)toast('🛂 Trasa vedie cez: '+list.map(x=>flag(x.cc)).join(' → '),4000)}
+ catch(e){if(!silent)toast('⚠️ '+e.message)}finally{XRD.cc=null;renderRouteExtrasSoon()}}
+function routeExtrasCard(d){if(!d.route||!d.route.coords||d.route.coords.length<2)return '';const sig=routeSig(d),R=roadOk(d),CC=d.ccs&&d.ccs.sig===sig?d.ccs:null;
+ let h='<div class="grid2" style="margin-top:12px"><div class="card" style="margin:0"><h4>🛂 Krajiny, známky a mýto <span class="muted small">(motorky, 2026)</span></h4>';
+ if(XRD.cc===d.id)h+=`<div class="small muted">Zisťujem krajiny na trase… ${XRD.ccp}</div>`;
+ else if(CC){const uniq=[...new Set(CC.list.map(x=>x.cc))];h+=`<div style="font-size:15px;margin-bottom:6px">${CC.list.map((x,i)=>`${flag(x.cc)} <b>${esc((CCINFO[x.cc]||{}).n||x.cc.toUpperCase())}</b>${i?` <span class="small muted">od km ${Math.round(x.km)}</span>`:''}`).join(' → ')}</div>`;
+  h+=uniq.map(c=>{const I=CCINFO[c];if(!I)return `<div class="small" style="margin:4px 0">${flag(c)} Pravidlá over na oficiálnom webe danej krajiny.</div>`;const need=/ÁNO/.test(I.v);return `<div class="small" style="margin:6px 0;padding:6px 8px;border-radius:8px;background:var(--panel2);border-left:4px solid ${need?'var(--warn)':'var(--ok)'}">${flag(c)} <b>${esc(I.n)}</b> – ${esc(I.v)}${I.t?`<br><span class="muted">${esc(I.t)}</span>`:''}${I.u?` <a href="${I.u}" target="_blank" rel="noopener">${I.u.replace('https://','')}</a>`:''}</div>`}).join('')+`<div class="small muted">Ceny 2026, pred cestou si ich over. <span style="cursor:pointer;color:var(--acc2)" onclick="loadCountries(day())">Prepočítať</span></div>`}
+ else h+=`<div class="small muted">Zistí krajiny, cez ktoré trasa vedie, potrebné diaľničné známky a mýto pre motorky. Pri jazde ťa na hranici upozorní.</div><div class="btnrow"><button class="sm primary" onclick="loadCountries(day())">🛂 Zistiť krajiny na trase</button></div>`;
+ h+='</div><div class="card" style="margin:0"><h4>📸 Radary a rýchlostné limity</h4>';
+ if(XRD.busy===d.id)h+=`<div class="small muted">Načítavam z OpenStreetMap… ${XRD.prog} %</div>`;
+ else if(R)h+=`<div style="font-size:15px">📸 <b>${R.cams.length}</b> pevných radarov · ⏱ <b>${R.secs.length}</b> úsekových meraní</div><div class="small muted">Rýchlostné limity známe pre ${R.cov} % trasy. Na mape sú červené značky. V režime 🏍️ Jazda: veľká výstraha ${XS.radarDist} m vopred + limit na displeji.</div><div class="btnrow"><button class="sm" onclick="loadRoadData(day())">🔄 Obnoviť</button><button class="sm" onclick="xSettings()">⚙️ Nastavenia</button></div>`;
+ else h+=`<div class="small muted">Stiahne pevné radary, úsekové merania a rýchlostné limity pozdĺž trasy (aj na offline jazdu). V režime Jazda sa načítajú samy.</div><div class="btnrow"><button class="sm primary" onclick="loadRoadData(day())">📸 Načítať radary a limity</button></div>`;
+ return h+'<div class="small muted" style="margin-top:4px">Zdroj: OpenStreetMap – nemusí byť úplný, mobilné radary nepozná.</div></div></div>'}
+
+/* ================= 🔧 GARÁŽ – SERVISNÝ DENNÍK ================= */
+const GAR_DEF=[['Olej + olejový filter',6000,12],['Mazanie reťaze',800,0],['Reťazová sada',20000,0],['Predná pneumatika',12000,60],['Zadná pneumatika',9000,60],['Brzdové doštičky – kontrola',6000,12],['Brzdová kvapalina',0,24],['Vzduchový filter',12000,24],['Sviečky',12000,0],['Chladiaca kvapalina',0,36],['STK',0,24],['Poistenie (PZP)',0,12],['Batéria – kontrola',0,12]];
+let GAR=lsGet('garage',null)||{bikes:[],act:null};
+function garSave(){lsSet('garage',GAR)}
+function garBike(){return GAR.bikes.find(b=>b.id===GAR.act)||GAR.bikes[0]||null}
+function garAddBike(){const name=prompt('Názov motorky (napr. Yamaha MT-07):',GAR.bikes.length?'':(trip()&&trip().bike)||'');if(name==null)return;const odo=parseFloat(String(prompt('Aktuálny stav tachometra (km):','0')||'0').replace(/\s/g,'').replace(',','.'))||0;
+ const t=todayStr();const b={id:uid(),name:name.trim().slice(0,60)||'Moja motorka',odo,note:'',items:GAR_DEF.map(([n,km,mo])=>({id:uid(),name:n,km,mo,lastKm:odo,lastDate:t})),log:[]};GAR.bikes.push(b);GAR.act=b.id;garSave();renderAll()}
+function garStat(b,it){const kmLeft=it.km?(+it.lastKm||0)+it.km-b.odo:null;let dLeft=null;if(it.mo&&it.lastDate){const d=new Date(it.lastDate+'T12:00');d.setMonth(d.getMonth()+(+it.mo));dLeft=Math.ceil((d-new Date(todayStr()+'T12:00'))/864e5)}
+ let lvl=0;if((kmLeft!=null&&kmLeft<=0)||(dLeft!=null&&dLeft<=0))lvl=2;else if((kmLeft!=null&&kmLeft<=Math.max(300,it.km*0.1))||(dLeft!=null&&dLeft<=30))lvl=1;return {kmLeft,dLeft,lvl}}
+function garLeftTxt(s){const a=[];if(s.kmLeft!=null)a.push(s.kmLeft<=0?Math.round(-s.kmLeft).toLocaleString('sk-SK')+' km po':'o '+Math.round(s.kmLeft).toLocaleString('sk-SK')+' km');if(s.dLeft!=null)a.push(s.dLeft<=0?(-s.dLeft)+' dní po':s.dLeft>60?'o '+Math.round(s.dLeft/30.4)+' mes.':'o '+s.dLeft+' dní');return a.join(' / ')||'–'}
+function garDueCount(){const b=garBike();if(!b)return 0;return b.items.filter(it=>garStat(b,it).lvl).length}
+function garSet(k,v){const b=garBike();if(!b)return;if(k==='odo'){const n=parseFloat(String(v).replace(/\s/g,'').replace(',','.'));if(!isFinite(n))return;b.log.push({id:uid(),date:todayStr(),km:n,text:`Korekcia tachometra ${Math.round(b.odo)} → ${Math.round(n)} km`,cost:0});b.odo=n}else b[k]=v;garSave();renderAll()}
+function garItem(id,k,v){const b=garBike(),it=b&&b.items.find(x=>x.id===id);if(!it)return;if(k==='name'||k==='lastDate')it[k]=v;else it[k]=Math.max(0,parseFloat(String(v).replace(/\s/g,'').replace(',','.'))||0);garSave();renderMain()}
+function garDone(id){const b=garBike(),it=b.items.find(x=>x.id===id);if(!it)return;const cost=parseFloat(String(prompt(`✓ ${it.name} – hotovo pri ${Math.round(b.odo)} km.\nCena (€, nepovinné):`,'')||'0').replace(',','.'))||0;
+ it.lastKm=b.odo;it.lastDate=todayStr();b.log.push({id:uid(),date:todayStr(),km:b.odo,text:it.name,cost});garSave();renderAll();toast('✓ Zapísané do servisnej knižky')}
+function garAddItem(){const b=garBike();const n=prompt('Názov položky (napr. Ventilová vôľa):');if(!n)return;b.items.push({id:uid(),name:n.slice(0,60),km:0,mo:12,lastKm:b.odo,lastDate:todayStr()});garSave();renderMain()}
+function garDelItem(id){const b=garBike();if(!confirm('Odstrániť položku?'))return;b.items=b.items.filter(x=>x.id!==id);garSave();renderAll()}
+function garLog(){const b=garBike();const tx=($('#gLogT').value||'').trim();if(!tx)return;const km=parseFloat(($('#gLogK').value||'').replace(',','.'));b.log.push({id:uid(),date:$('#gLogD').value||todayStr(),km:isFinite(km)?km:b.odo,text:tx.slice(0,300),cost:parseFloat(($('#gLogC').value||'0').replace(',','.'))||0});garSave();renderMain()}
+function garDelLog(id){const b=garBike();if(!confirm('Zmazať záznam?'))return;b.log=b.log.filter(x=>x.id!==id);garSave();renderMain()}
+function garDelBike(){const b=garBike();if(!b||!confirm(`Zmazať motorku „${b.name}“ aj so servisnou knižkou?`))return;GAR.bikes=GAR.bikes.filter(x=>x.id!==b.id);GAR.act=GAR.bikes[0]&&GAR.bikes[0].id;garSave();renderAll()}
+function garExport(){const b=garBike();if(!b)return;const rows=[['Dátum','Km','Úkon','Cena €']].concat(b.log.slice().sort((a,c)=>a.date<c.date?-1:1).map(l=>[l.date,Math.round(l.km),l.text,l.cost||'']));download(slug(b.name)+'-servis.csv','﻿'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n'),'text/csv')}
+function renderGarage(){const b=garBike();
+ $('#viewHead').innerHTML=`<div class="headrow"><h2>🔧 Garáž a servis</h2><div class="grow"></div>${GAR.bikes.length>1?`<select style="width:auto" onchange="GAR.act=this.value;garSave();renderAll()">${GAR.bikes.map(x=>`<option value="${x.id}" ${b&&x.id===b.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}<button class="sm primary" onclick="garAddBike()">＋ Motorka</button></div>`;
+ if(!b){$('#content').innerHTML=`<div class="card"><h4>Servisná knižka motorky</h4><div class="small">Pridaj si motorku a stav tachometra. Appka bude sledovať olej, reťaz, pneumatiky, STK, poistenie… podľa km aj dátumu (čo príde skôr). Km z nahraných jázd sa pripočítajú samé.</div><div class="btnrow"><button class="primary" onclick="garAddBike()">＋ Pridať motorku</button></div></div>`;return}
+ const st=b.items.map(it=>({it,s:garStat(b,it)})).sort((x,y)=>y.s.lvl-x.s.lvl);const cost=b.log.reduce((a,l)=>a+(+l.cost||0),0);
+ $('#content').innerHTML=`<div class="card"><div class="grid3"><div><label>Motorka</label><input value="${esc(b.name)}" onchange="garSet('name',this.value)"></div><div><label>Tachometer (km)</label><input type="number" value="${Math.round(b.odo)}" onchange="garSet('odo',this.value)"></div><div><label>Poznámka (VIN, olej, tlak pneu…)</label><input value="${esc(b.note||'')}" onchange="garSet('note',this.value)"></div></div>
+  <div class="small muted" style="margin-top:6px">Km z nahraných jázd (⏺ v režime Jazda) sa pripočítajú automaticky. Servis v tomto roku: ${Math.round(b.log.filter(l=>(l.date||'').slice(0,4)===todayStr().slice(0,4)).reduce((a,l)=>a+(+l.cost||0),0))} € · celkom ${Math.round(cost)} €</div></div>
+ <div class="card"><h4>Intervaly a pripomienky <span class="muted small">(0 = nesledovať)</span></h4><div style="overflow:auto"><table><thead><tr><th>Položka</th><th>Každých km</th><th>Každých mesiacov</th><th>Naposledy km</th><th>Naposledy dátum</th><th>Zostáva</th><th></th></tr></thead><tbody>
+ ${st.map(({it,s})=>`<tr style="${s.lvl===2?'background:rgba(239,68,68,.15)':s.lvl===1?'background:rgba(245,197,66,.12)':''}"><td><input value="${esc(it.name)}" onchange="garItem('${it.id}','name',this.value)" style="min-width:150px"></td>
+  <td><input type="number" style="width:90px" value="${it.km||0}" onchange="garItem('${it.id}','km',this.value)"></td><td><input type="number" style="width:70px" value="${it.mo||0}" onchange="garItem('${it.id}','mo',this.value)"></td>
+  <td><input type="number" style="width:90px" value="${Math.round(it.lastKm||0)}" onchange="garItem('${it.id}','lastKm',this.value)"></td><td><input type="date" value="${esc(it.lastDate||'')}" onchange="garItem('${it.id}','lastDate',this.value)"></td>
+  <td style="white-space:nowrap;font-weight:600;color:${s.lvl===2?'var(--bad)':s.lvl===1?'var(--warn)':'var(--ok)'}">${s.lvl===2?'⛔ ':s.lvl===1?'⚠️ ':'✓ '}${garLeftTxt(s)}</td>
+  <td style="white-space:nowrap"><button class="sm primary" onclick="garDone('${it.id}')" title="Urobené teraz">✓ Hotovo</button><button class="sm" onclick="garDelItem('${it.id}')">🗑</button></td></tr>`).join('')}
+ </tbody></table></div><div class="btnrow"><button class="sm" onclick="garAddItem()">＋ Pridať položku</button></div></div>
+ <div class="card"><h4>📒 Servisná knižka</h4><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><input id="gLogD" type="date" value="${todayStr()}" style="width:auto"><input id="gLogK" type="number" placeholder="km" value="${Math.round(b.odo)}" style="width:100px"><input id="gLogT" placeholder="Čo sa robilo (napr. výmena brzdových doštičiek vpredu)" style="flex:1;min-width:200px"><input id="gLogC" type="number" placeholder="€" style="width:80px"><button class="primary" onclick="garLog()">Zapísať</button></div>
+ ${b.log.length?`<div class="list">${b.log.slice().sort((a,c)=>(c.date+c.km)>(a.date+a.km)?1:-1).map(l=>`<div class="item"><span class="small muted" style="white-space:nowrap">${esc(l.date)} · ${Math.round(l.km).toLocaleString('sk-SK')} km</span><span class="grow">${esc(l.text)}</span>${l.cost?`<b>${(+l.cost).toFixed(0)} €</b>`:''}<button class="sm" onclick="garDelLog('${l.id}')">🗑</button></div>`).join('')}</div>`:'<div class="small muted">Zatiaľ prázdna. Stlač „✓ Hotovo“ pri položke alebo zapíš úkon vyššie.</div>'}
+ <div class="btnrow"><button class="sm" onclick="garExport()">📤 Export CSV</button><button class="sm danger" onclick="garDelBike()">🗑 Zmazať motorku</button></div></div>`}
+
+/* ================= 📊 ROZBOR JAZDY + PREHRATIE ================= */
+function trackAnalysis(tr){if(!tr||tr.length<5)return null;let mL=0,mR=0,nl=0;const bk=[0,0,0,0];
+ tr.forEach(p=>{const l=p[4];if(l==null)return;nl++;if(l>mL)mL=l;if(-l>mR)mR=-l;const a=Math.abs(l);bk[a<15?0:a<25?1:a<35?2:3]++});
+ const v=tr.map((p,i)=>p[3]!=null?p[3]/3.6:(i?hav(tr[i-1],p)*1000/Math.max(1,p[2]-tr[i-1][2]):0));let mA=0,mB=0,hb=0,lh=-1e9;
+ for(let i=0;i<tr.length;i++){let j=i+1;while(j<tr.length&&tr[j][2]-tr[i][2]<3)j++;if(j>=tr.length)break;const dt=tr[j][2]-tr[i][2];if(dt>8)continue;const a=(v[j]-v[i])/dt/9.81;if(Math.abs(a)>1.2)continue;if(a>mA)mA=a;if(-a>mB)mB=-a;if(-a>0.45&&tr[i][2]-lh>10){hb++;lh=tr[i][2]}}
+ return {mL,mR,bk,nl,mA,mB,hb}}
+function analysisCard(d){const a=trackAnalysis(d.track);if(!a)return '';const tot=a.bk.reduce((x,y)=>x+y,0)||1;const lab=['0–15°','15–25°','25–35°','35°+'],col=['#22c55e','#f5c542','#ff7a1a','#ef4444'];
+ return `<div class="card"><h4>📊 Rozbor jazdy</h4><div class="stats" style="margin:0 0 8px">
+ ${a.nl?`<div class="stat"><div class="v">◀ ${Math.round(a.mL)}°</div><div class="l">Max náklon vľavo</div></div><div class="stat"><div class="v">${Math.round(a.mR)}° ▶</div><div class="l">Max náklon vpravo</div></div>`:''}
+ <div class="stat"><div class="v">${a.mA.toFixed(2).replace('.',',')} g</div><div class="l">Max zrýchlenie</div></div><div class="stat"><div class="v">${a.mB.toFixed(2).replace('.',',')} g</div><div class="l">Max brzdenie</div></div><div class="stat"><div class="v">${a.hb}</div><div class="l">Prudké brzdenia</div></div></div>
+ ${a.nl?`<div class="small muted">Čas v náklone</div><div style="display:flex;height:14px;border-radius:7px;overflow:hidden;margin:4px 0">${a.bk.map((n,i)=>n?`<div title="${lab[i]}: ${Math.round(n/tot*100)} %" style="width:${n/tot*100}%;background:${col[i]}"></div>`:'').join('')}</div><div class="small">${a.bk.map((n,i)=>`<span style="color:${col[i]}">■</span> ${lab[i]} ${Math.round(n/tot*100)} %`).join(' · ')}</div>`:'<div class="small muted">Náklon sa meria v režime Jazda s mobilom pevne v držiaku (gyroskop, bez neho z GPS).</div>'}
+ <div class="small muted" style="margin-top:4px">Orientačné hodnoty z mobilu, nie presné meranie.</div><div class="btnrow"><button class="sm primary" onclick="replayStart()">▶ Prehrať jazdu na mape</button></div></div>`}
+function trackCard(d){const h=trackCard0(d);return h?h+analysisCard(d):''}
+const RP={on:false,t:0,spd:30,play:false,mk:null,line:null,raf:0,last:0,vt:null,tr:null,i:-1,dayId:null,pan:0};
+function replayStart(){const d=day();if(!d||!d.track||d.track.length<2)return;replayStop();const tr=d.track;const vt=[0];for(let i=1;i<tr.length;i++)vt.push(vt[i-1]+Math.min(10,Math.max(0,tr[i][2]-tr[i-1][2])));
+ Object.assign(RP,{on:true,tr,vt,t:0,play:true,i:-1,dayId:d.id,last:performance.now(),pan:0});RP.line=L.polyline([],{color:'#ff7a1a',weight:6}).addTo(map);RP.mk=L.circleMarker([tr[0][0],tr[0][1]],{radius:10,color:'#fff',weight:3,fillColor:'#ff7a1a',fillOpacity:1}).addTo(map);
+ let p=$('#xReplay');if(!p){p=document.createElement('div');p.id='xReplay';document.body.appendChild(p)}
+ p.innerHTML=`<button id="rpPlay" onclick="RP.play=!RP.play;if(RP.t>=RP.vt[RP.vt.length-1])RP.t=0;$('#rpPlay').textContent=RP.play?'⏸':'▶'">⏸</button><input id="rpSl" type="range" min="0" max="1000" value="0" oninput="RP.t=this.value/1000*RP.vt[RP.vt.length-1];RP.i=-1"><select onchange="RP.spd=+this.value">${[10,30,60,120,300].map(v=>`<option value="${v}" ${v===RP.spd?'selected':''}>${v}×</option>`).join('')}</select><span id="rpInfoR" class="small"></span><button onclick="replayStop()">✕</button>`;
+ map.fitBounds(tr.map(x=>[x[0],x[1]]),{padding:[30,30]});RP.raf=requestAnimationFrame(replayTick)}
+function replayTick(now){if(!RP.on)return;const dt=(now-RP.last)/1000;RP.last=now;const end=RP.vt[RP.vt.length-1];if(RP.play){RP.t+=dt*RP.spd;if(RP.t>=end){RP.t=end;RP.play=false;const b=$('#rpPlay');if(b)b.textContent='▶'}}
+ const vt=RP.vt,tr=RP.tr;let lo=0,hi=vt.length-1;while(lo<hi){const m=(lo+hi+1)>>1;if(vt[m]<=RP.t)lo=m;else hi=m-1}const i=lo,j=Math.min(i+1,tr.length-1),f=vt[j]>vt[i]?(RP.t-vt[i])/(vt[j]-vt[i]):0;
+ const ll=[tr[i][0]+(tr[j][0]-tr[i][0])*f,tr[i][1]+(tr[j][1]-tr[i][1])*f];RP.mk.setLatLng(ll);
+ if(i!==RP.i){RP.i=i;RP.line.setLatLngs(tr.slice(0,i+1).map(x=>[x[0],x[1]]).concat([ll]));const sl=$('#rpSl');if(sl)sl.value=Math.round(RP.t/end*1000);
+  const kmh=tr[i][3]!=null?Math.round(tr[i][3]):(i?Math.round(hav(tr[i-1],tr[i])/Math.max(1,tr[i][2]-tr[i-1][2])*3600):0);const l=tr[i][4];
+  const e=$('#rpInfoR');if(e)e.innerHTML=`🕘 ${new Date(tr[i][2]*1000).toLocaleTimeString('sk-SK',{hour:'2-digit',minute:'2-digit'})} · <b>${kmh} km/h</b>${l!=null&&Math.abs(l)>=3?' · '+(l>0?'◀ '+Math.round(l)+'°':Math.round(-l)+'° ▶'):''}`;
+  if(now-RP.pan>800){RP.pan=now;if(!map.getBounds().pad(-0.15).contains(ll))map.panTo(ll)}}
+ RP.raf=requestAnimationFrame(replayTick)}
+function replayStop(){RP.on=false;cancelAnimationFrame(RP.raf);if(RP.mk)RP.mk.remove();if(RP.line)RP.line.remove();RP.mk=RP.line=null;const p=$('#xReplay');if(p)p.remove()}
+
+/* ================= 📍 MOTO MIESTA KOMUNITY ================= */
+const PLT={servis:['🔧','Moto servis'],shop:['🛒','Moto obchod / výstroj'],stay:['🏨','Ubytovanie pre motorkárov'],food:['🍽️','Reštaurácia'],cafe:['☕','Motokaviareň / motorest'],fuel:['⛽','Čerpačka'],park:['🅿️','Parkovanie / garáž'],view:['🏞️','Vyhliadka / zastávka'],other:['📍','Iné']};
+function plFiltered(){let l=(X.places||[]).filter(p=>isFinite(p.lat)&&isFinite(p.lng));if(X.plF)l=l.filter(p=>p.type===X.plF);return l}
+function plScore(p){const r=avgR(p.ratings);return r.a*Math.min(r.n,5)+3*Math.max(0,5-r.n)}
+function renderPlaces(){if(X.plForm)return placeForm();if(!X.places)return '<div class="empty">Načítavam miesta…</div>';
+ const c=map?map.getCenter():null;const l=plFiltered().sort((a,b)=>plScore(b)-plScore(a));
+ return `<div class="card"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><select style="flex:1;min-width:160px" onchange="X.plF=this.value;renderCommunity();drawMap(true)"><option value="">Všetky typy (${(X.places||[]).length})</option>${Object.entries(PLT).map(([k,v])=>`<option value="${k}" ${X.plF===k?'selected':''}>${v[0]} ${v[1]}</option>`).join('')}</select><button class="primary" onclick="placeNew()">＋ Pridať miesto</button></div>
+ <div class="small muted" style="margin-top:6px">Servisy, obchody, ubytovania a podniky, ktoré motorkári odporúčajú. Hodnoť ★ a pridávaj vlastné tipy.</div></div>
+ ${l.length?l.slice(0,150).map(p=>{const T=PLT[p.type]||PLT.other,r=avgR(p.ratings);return `<div class="card" style="cursor:pointer" onclick="map.setView([${+p.lat},${+p.lng}],14)"><div style="font-weight:700">${T[0]} ${esc(p.name)} <span class="small muted">${esc(T[1])}${c?' · '+Math.round(hav([c.lat,c.lng],[p.lat,p.lng]))+' km od stredu mapy':''}</span></div><div class="small">${stars(r.a)} <span class="muted">${r.n?r.a.toFixed(1)+' ('+r.n+')':'bez hodnotenia'} · ${esc(p.author||'?')}</span></div>${p.desc?`<div class="small" style="white-space:pre-wrap;margin-top:3px">${esc(p.desc)}</div>`:''}</div>`}).join(''):'<div class="empty">Zatiaľ žiadne miesto. Pridaj prvé!</div>'}`}
+function plPopup(p){const T=PLT[p.type]||PLT.other,r=avgR(p.ratings),my=C.user&&p.ratings?p.ratings[C.user.uid]:0,own=C.user&&(p.uid===C.user.uid||C.admin),w=safeUrl(p.web);
+ return `<div class="pop" style="min-width:200px"><b>${T[0]} ${esc(p.name)}</b><br><span style="font-size:12px">${esc(T[1])} · ${r.n?r.a.toFixed(1)+' ★ ('+r.n+')':'bez hodnotenia'}</span>${p.desc?`<div style="font-size:12px;white-space:pre-wrap;margin:4px 0">${esc(p.desc)}</div>`:'<br>'}${w?`<a href="${esc(w)}" target="_blank" rel="noopener">🌐 web</a><br>`:''}
+ <div>${[1,2,3,4,5].map(i=>`<span style="cursor:pointer;font-size:20px;color:${my>=i?'#f5c542':'#8892a0'}" onclick="placeRate('${esc(p.id)}',${i})">★</span>`).join('')}</div><button onclick="placeToDay('${esc(p.id)}')">➕ Do dňa</button>${C.user&&!own?`<button onclick="reportItem('places','${esc(p.id)}')">🚩</button>`:''}${own?`<button onclick="placeDel('${esc(p.id)}')">🗑</button>`:''}</div>`}
+function placeNew(){if(needLogin())return;const c=map.getCenter();X.pickLL=[+c.lat.toFixed(5),+c.lng.toFixed(5)];X.plForm={name:'',type:'servis',desc:'',web:''};X.pick=ll=>{X.pickLL=[+ll.lat.toFixed(5),+ll.lng.toFixed(5)];drawExt();const e=$('#plPos');if(e)e.textContent=X.pickLL.join(', ')};renderCommunity();drawExt()}
+function placeForm(){const f=X.plForm;return `<div class="btnrow"><button class="sm" onclick="placeCancel()">◀ Zrušiť</button></div><div class="card"><h4>📍 Nové moto miesto</h4>
+ <div class="small" style="padding:6px 8px;background:var(--panel2);border-radius:8px">👆 Klikni do mapy na presné miesto (📍). Poloha: <b id="plPos">${X.pickLL?X.pickLL.join(', '):'–'}</b> <button class="sm" onclick="placeMyPos()">📍 Moja poloha</button></div>
+ <label>Názov *</label><input maxlength="80" value="${esc(f.name)}" oninput="X.plForm.name=this.value" placeholder="napr. Moto servis Novák">
+ <label>Typ</label><select onchange="X.plForm.type=this.value">${Object.entries(PLT).map(([k,v])=>`<option value="${k}" ${f.type===k?'selected':''}>${v[0]} ${v[1]}</option>`).join('')}</select>
+ <label>Prečo ho odporúčaš</label><textarea maxlength="1500" oninput="X.plForm.desc=this.value" placeholder="Rýchly servis aj pre cudzincov, garáž pre motorky, motorkárske menu…">${esc(f.desc)}</textarea>
+ <label>Web / telefón (nepovinné)</label><input maxlength="200" value="${esc(f.web)}" oninput="X.plForm.web=this.value" placeholder="https://…">
+ <div class="btnrow"><button class="primary" onclick="placeSave()">💾 Uložiť a zverejniť</button></div></div>`}
+function placeCancel(){X.plForm=null;X.pick=null;X.pickLL=null;renderCommunity();drawMap(true)}
+function placeMyPos(){if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{X.pickLL=[+p.coords.latitude.toFixed(5),+p.coords.longitude.toFixed(5)];map.setView(X.pickLL,15);drawExt();const e=$('#plPos');if(e)e.textContent=X.pickLL.join(', ')},()=>toast('Polohu sa nepodarilo zistiť'),{enableHighAccuracy:true,timeout:15000})}
+async function placeSave(){const f=X.plForm;if(needLogin())return;const name=(f.name||'').trim().slice(0,80);if(!name){toast('Zadaj názov');return}if(!X.pickLL){toast('Klikni do mapy na miesto');return}
+ const web=String(f.web||'').trim().slice(0,200);const p={type:f.type,name,desc:(f.desc||'').slice(0,1500),web,lat:X.pickLL[0],lng:X.pickLL[1],uid:C.user.uid,author:myName().slice(0,40),ratings:{}};
+ try{const id=await CDB().add('places',p);X.places=(X.places||[]).concat([{id,...p,created:Date.now()}]);placeCancel();toast('📍 Miesto pridané – ďakujeme!')}catch(e){toast('⚠️ '+e.message,5000)}}
+async function placeRate(id,i){if(needLogin())return;const p=(X.places||[]).find(x=>x.id===id);if(!p)return;try{await CDB().update('places',id,{['ratings.'+C.user.uid]:i});p.ratings=Object.assign({},p.ratings,{[C.user.uid]:i});map.closePopup();renderCommunity();toast('Ďakujeme za hodnotenie ⭐')}catch(e){toast('⚠️ '+e.message)}}
+async function placeDel(id){if(!confirm('Zmazať miesto?'))return;try{await CDB().del('places',id);X.places=X.places.filter(x=>x.id!==id);map.closePopup();renderCommunity();drawExt()}catch(e){toast('⚠️ '+e.message)}}
+function placeToDay(id){const p=(X.places||[]).find(x=>x.id===id),d=day();if(!p||!d)return;const tm={servis:'service',shop:'service',stay:'hotel',food:'food',cafe:'cafe',fuel:'fuel',view:'view'};d.pois.push({id:uid(),type:tm[p.type]||'other',name:String(p.name).slice(0,80),note:String(p.desc||'').slice(0,300),link:safeUrl(p.web)||'',lat:+p.lat,lng:+p.lng,done:false});save();map.closePopup();toast(`➕ Pridané do zaujímavostí dňa ${dayIndex(d)+1}`)}
+
+/* ================= 🆘 POMOC NA CESTE ================= */
+const SOSO={repair:['🔧','Oprava / poradím'],tow:['🚚','Odvoz / vozík'],sleep:['🏠','Nocľah'],garage:['🅿️','Garáž pre motorku'],tyre:['🛞','Pneu / defekt'],battery:['🔋','Štartovacie káble'],tools:['🧰','Náradie'],lang:['🗣️','Tlmočenie / miestne info']};
+async function sosLoad(){try{if(!C.user){X.helpers=[];return}const l=await CDB().list('helpers',{where:['active',true],limit:800});X.helpers=l.filter(h=>Date.now()-tsMs(h.updated)<400*864e5);X.mine=l.find(h=>h.uid===C.user.uid)||(await CDB().get('helpers',C.user.uid));renderCommunity();drawMap(true)}catch(e){toast('⚠️ '+e.message,5000)}}
+function sosFind(){if(!navigator.geolocation){toast('GPS nie je dostupné');return}toast('Zisťujem polohu…',2000);navigator.geolocation.getCurrentPosition(p=>{X.myLL=[p.coords.latitude,p.coords.longitude];map.setView(X.myLL,9);renderCommunity();drawExt()},()=>{const c=map.getCenter();X.myLL=[c.lat,c.lng];renderCommunity();drawExt();toast('Polohu sa nepodarilo zistiť – použijem stred mapy')},{enableHighAccuracy:true,timeout:15000})}
+function sosOpen(){if(S.view==='ride')leaveRide();openCommunity('sos')}
+function renderSos(){const me=X.mine;const f=X.hForm||(X.hForm={name:me&&me.name||myName(),phone:me&&me.phone||'',offers:me&&me.offers||[],note:me&&me.note||''});
+ const ref=X.myLL||(map?[map.getCenter().lat,map.getCenter().lng]:null);const hs=(X.helpers||[]).filter(h=>!C.user||h.uid!==C.user.uid).map(h=>({h,km:ref?hav(ref,[h.lat,h.lng]):0})).sort((a,b)=>a.km-b.km);
+ return `<div class="card" style="border-color:var(--bad)"><h4>🆘 Potrebuješ pomoc?</h4><div class="btnrow"><a class="btn" href="tel:112" style="background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;text-decoration:none">📞 112 – tiesňová linka</a><button onclick="sharePos()">📤 Poslať moju polohu</button><button class="primary" onclick="sosFind()">🔎 Motorkári ochotní pomôcť v okolí</button></div>
+ <div class="small muted">Pri zranení vždy najprv 112. Pre defekt, poruchu či nocľah ti pomôžu motorkári z komunity v okolí.</div></div>
+ ${!C.user?'<div class="card small">Zoznam pomocníkov vidia len prihlásení (chránime ich telefónne čísla). Prihlás sa v záložke 👤 Profil.</div>':X.helpers==null?'<div class="empty">Načítavam…</div>':`<div class="card"><h4>🤝 Pomocníci ${X.myLL?'najbližšie k tebe':'(zoradení od stredu mapy)'} <span class="muted small">(${hs.length})</span></h4>${hs.length?`<div class="list">${hs.slice(0,40).map(({h,km})=>`<div class="item" style="flex-wrap:wrap">${avatar(h.uid,h.name,28)}<div class="grow"><b>${esc(h.name)}</b> <span class="small muted">~${Math.round(km)} km</span><div class="small">${(h.offers||[]).filter(o=>SOSO[o]).map(o=>SOSO[o][0]+' '+SOSO[o][1]).join(' · ')}</div>${h.note?`<div class="small muted">${esc(h.note)}</div>`:''}</div>${h.phone?`<a class="btn" href="tel:${esc(String(h.phone).replace(/[^+\d]/g,''))}" style="padding:8px 12px;border-radius:8px;background:var(--ok);color:#000;text-decoration:none;font-weight:700">☎ Volať</a>`:''}</div>`).join('')}</div>`:'<div class="small muted">Zatiaľ sa nikto neprihlásil. Buď prvý nižšie 👇</div>'}</div>`}
+ ${C.user?`<div class="card"><h4>🤝 Chcem pomáhať motorkárom v okolí ${me&&me.active?'<span class="badge" style="background:var(--ok);color:#000">aktívne</span>':''}</h4>
+ <div class="small muted">Ako na SOS Moto: ak niekto v tvojom okolí bude mať problém, nájde ťa tu a zavolá. Poloha sa ukladá približne (cca 1 km), telefón vidia len prihlásení motorkári.</div>
+ <div class="grid2"><div><label>Meno</label><input maxlength="40" value="${esc(f.name)}" oninput="X.hForm.name=this.value"></div><div><label>Telefón *</label><input maxlength="30" type="tel" value="${esc(f.phone)}" oninput="X.hForm.phone=this.value" placeholder="+421 9xx xxx xxx"></div></div>
+ <label>S čím vieš pomôcť</label><div class="chips">${Object.entries(SOSO).map(([k,v])=>`<label><input type="checkbox" ${f.offers.includes(k)?'checked':''} onchange="X.hForm.offers=this.checked?[...X.hForm.offers,'${k}']:X.hForm.offers.filter(x=>x!=='${k}')">${v[0]} ${v[1]}</label>`).join('')}</div>
+ <label>Poznámka</label><input maxlength="500" value="${esc(f.note)}" oninput="X.hForm.note=this.value" placeholder="napr. dielňa v Trenčíne, cez týždeň po 17:00">
+ <div class="btnrow"><button class="primary" onclick="sosSave()">💾 Uložiť (poloha = moja poloha)</button>${me?`<button class="danger" onclick="sosRemove()">Odstrániť ma zo zoznamu</button>`:''}</div></div>`:''}`}
+async function sosSave(){if(needLogin())return;const f=X.hForm;if(!String(f.phone||'').replace(/\D/g,'')){toast('Zadaj telefón');return}if(!f.offers.length){toast('Vyber, s čím vieš pomôcť');return}
+ const go=async ll=>{const doc={uid:C.user.uid,name:String(f.name||myName()).slice(0,40),phone:String(f.phone).slice(0,30),offers:f.offers.slice(0,10),note:String(f.note||'').slice(0,500),lat:+ll[0].toFixed(2),lng:+ll[1].toFixed(2),active:true,updated:Date.now()};
+  try{await CDB().set('helpers',C.user.uid,doc);X.mine=doc;X.helpers=(X.helpers||[]).filter(h=>h.uid!==C.user.uid).concat([doc]);renderCommunity();drawExt();toast('🤝 Ďakujeme! Si v zozname pomocníkov.')}catch(e){toast('⚠️ '+e.message,5000)}};
+ if(!navigator.geolocation){const c=map.getCenter();return go([c.lat,c.lng])}
+ navigator.geolocation.getCurrentPosition(p=>go([p.coords.latitude,p.coords.longitude]),()=>{const c=map.getCenter();if(confirm('Polohu sa nepodarilo zistiť. Použiť stred mapy?'))go([c.lat,c.lng])},{timeout:15000})}
+async function sosRemove(){if(!confirm('Odstrániť ťa zo zoznamu pomocníkov?'))return;try{await CDB().del('helpers',C.user.uid);X.mine=null;X.hForm=null;X.helpers=(X.helpers||[]).filter(h=>h.uid!==C.user.uid);renderCommunity();drawExt()}catch(e){toast('⚠️ '+e.message)}}
+async function extLoadTab(){if(C.tab==='places'&&!X.places){X.places=await CDB().list('places',{limit:1500});renderCommunity();drawMap(true)}if(C.tab==='sos'&&X.helpers==null&&C.user)await sosLoad()}
+
+/* ================= 📖 CESTOPISY ================= */
+function travForm(s,ph){s.gal=s.gal||[];return `<label>📖 Cestopis (nepovinné) – zážitky z cesty, príbeh, čo ste zažili</label><textarea maxlength="8000" style="min-height:110px" oninput="C.share.story=this.value">${esc(s.story||'')}</textarea>
+ ${ph.length?`<label>Fotky do cestopisu (max 6) – ${s.gal.length}/6</label><div style="display:flex;gap:6px;flex-wrap:wrap">${ph.slice(0,30).map(p=>{const on=s.gal.includes(p.id);return `<img src="${p.data}" onclick="travPick('${p.id}')" style="width:80px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;border:3px solid ${on?'#22c55e':'transparent'};opacity:${on||s.gal.length<6?1:.4}">`}).join('')}</div>`:'<div class="small muted">Fotky do cestopisu pridáš v záložke 📷 Fotky daného dňa.</div>'}`}
+function travPick(id){const g=C.share.gal=C.share.gal||[];const i=g.indexOf(id);if(i>=0)g.splice(i,1);else if(g.length<6)g.push(id);else{toast('Max 6 fotiek');return}renderCommunity()}
+async function galPack(s){const out=[];for(const id of (s.gal||[]).slice(0,6)){const p=S.photos.find(x=>x.id===id);if(p){const u=await shrinkImg(p.data,560,0.66);if(u)out.push(u)}}return out}
+function travView(x){const g=(x.gallery||[]).map(safeImg).filter(Boolean);if(!x.story&&!g.length)return '';
+ return `<div style="margin:10px 0;padding:10px;border-radius:10px;background:var(--panel2)"><div style="font-weight:700;margin-bottom:6px">📖 Cestopis</div>${x.story?`<div style="white-space:pre-wrap;line-height:1.5">${esc(x.story)}</div>`:''}
+ ${g.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;margin-top:8px">${g.map((u,i)=>`<img src="${u}" onclick="travBig(${i})" style="width:100%;height:100px;object-fit:cover;border-radius:8px;cursor:zoom-in">`).join('')}</div>`:''}</div>`}
+function travBig(i){const g=((C.sel&&C.sel.gallery)||[]).map(safeImg).filter(Boolean);if(!g[i])return;xModal(`<img src="${g[i]}" style="width:100%;border-radius:8px"><div class="btnrow"><button ${i?'':'disabled'} onclick="travBig(${i-1})">◀</button><button ${i<g.length-1?'':'disabled'} onclick="travBig(${i+1})">▶</button><button onclick="xModalClose()">Zavrieť</button></div>`)}
+
+/* ================= 🔧 moto servisy z OSM v Návrhoch ================= */
+async function osmMoto(){const d=day();toast('Hľadám moto servisy a obchody…',3000);
+ try{const j=await overpass(`[out:json][timeout:60];(nwr[shop~"^(motorcycle|motorcycle_repair)$"]${areaFilter(d,8000)};nwr[craft=motorcycle_repair]${areaFilter(d,8000)};);out center tags;`);
+  const items=j.elements.map(e=>{const t=e.tags||{};const lat=e.lat!=null?e.lat:e.center&&e.center.lat,lng=e.lon!=null?e.lon:e.center&&e.center.lon;if(lat==null)return null;
+   return {id:'o_'+e.type[0]+e.id,src:'osm',cat:'moto',name:t.name||(t.shop==='motorcycle'?'Moto obchod':'Moto servis'),lat:+lat.toFixed(6),lng:+lng.toFixed(6),addr:[t['addr:city']||t['addr:place'],t.phone||t['contact:phone'],t.opening_hours].filter(Boolean).join(' · '),url:safeUrl(t.website||t['contact:website'])||`https://www.openstreetmap.org/${e.type}/${e.id}`}}).filter(Boolean);
+  mergeSug(d,items);save();renderAll();toast(`Nájdených ${items.length} moto servisov a obchodov`)}catch(e){toast('⚠️ '+e.message,5000)}}
+
+function extInit(){const m=location.hash.match(/^#grp=([A-Z0-9]{4,8})/i);if(m){G.code=m[1].toUpperCase();lsSet('grp',G.code);history.replaceState(null,'',location.pathname);toast('👥 Kód skupiny '+G.code+' uložený – spusti 🏍️ Jazdu',5000)}}
+
 /* ================= Štart ================= */
 (async function init(){
  if(typeof L==='undefined'){document.body.innerHTML='<div style="padding:30px">Mapová knižnica sa nenačítala.</div>';return}
@@ -5214,6 +5649,7 @@ function printTrip(diary){const t=trip();const w=window.open('','_blank');if(!w)
  window.addEventListener('resize',()=>{if(S.view==='day'&&S.dayTab==='route'&&day()&&day().elev)drawElev(day().elev)});
  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
  if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+ extInit();
  await importFromHash();
  window.addEventListener('hashchange',()=>importFromHash());
 })();
